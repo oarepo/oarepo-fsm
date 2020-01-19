@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# examples is free software; you can redistribute it and/or modify it under
+# oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 pydocstyle oarepo_fsm tests docs && \

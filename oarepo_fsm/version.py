@@ -2,10 +2,10 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# examples is free software; you can redistribute it and/or modify it under
+# oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
-"""Version information for examples.
+"""Version information for oarepo-fsm.
 
 This file is imported by ``oarepo_fsm.__init__``,
 and parsed by ``setup.py``.

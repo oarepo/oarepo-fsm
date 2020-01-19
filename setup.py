@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# examples is free software; you can redistribute it and/or modify it under
+# oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """OArepo FSM library for record state transitions"""
@@ -50,7 +50,7 @@ with open(os.path.join('oarepo_fsm', 'version.py'), 'rt') as fp:
     version = g['__version__']
 
 setup(
-    name='examples',
+    name='oarepo-fsm',
     version=version,
     description=__doc__,
     long_description=readme + '\n\n' + history,

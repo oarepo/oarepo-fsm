@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# examples is free software; you can redistribute it and/or modify it under
+# oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """OArepo FSM library for record state transitions"""
@@ -27,7 +27,7 @@ from .views import FSMRecordAction
 
 
 class _OARepoFSMState(object):
-    """examples state object."""
+    """oarepo-fsm state object."""
 
     def __init__(self, app):
         """Initialize state."""
@@ -156,7 +156,7 @@ class _OARepoFSMState(object):
 
 
 class OARepoFSM(object):
-    """examples extension."""
+    """oarepo-fsm extension."""
 
     def __init__(self, app=None):
         """Extension initialization."""
