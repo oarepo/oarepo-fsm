@@ -13,3 +13,5 @@ export FLASK_APP=app.py
 
 # Teardown app
 [ -e "$DIR/instance" ] && rm -Rf $DIR/instance
+
+docker-compose down

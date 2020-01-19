@@ -1,6 +1,6 @@
 {
   "definitions": {
-    "a": {
+    "StatefulRecord": {
       "type": "object",
       "required": ["b"],
       "properties": {

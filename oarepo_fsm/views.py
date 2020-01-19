@@ -2,24 +2,17 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# examples is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """OArepo FSM library for record state transitions"""
 from __future__ import absolute_import, print_function
 
-from invenio_records_rest.views import need_record_permission, pass_record
-from flask import Blueprint, render_template
 from flask.views import MethodView
-from flask_babelex import gettext as _
-
-blueprint = Blueprint(
-    'oarepo_fsm',
-    __name__,
-)
+from invenio_records_rest.views import need_record_permission, pass_record
 
 
-class FSMView(MethodView):
+class FSMRecordAction(MethodView):
     view_name = 'fsm_{0}'
 
     def __init__(self,
@@ -43,7 +36,7 @@ class FSMView(MethodView):
     @need_record_permission('transition_permission_factory')
     def post(self, pid, record, **kwargs):
         """Change Record state using FSM transition."""
-        current_search_client.indices.refresh()
-        current_search_client.indices.flush()
-        endpoint = 'invenio_records_rest.{0}_item'.format(self.published_endpoint_name)
-        return redirect(url_for(endpoint, pid_value=pid.pid_value, _external=True), code=302)
+        # current_search_client.indices.refresh()
+        # current_search_client.indices.flush()
+        # endpoint = 'invenio_records_rest.{0}_item'.format(self.published_endpoint_name)
+        # return redirect(url_for(endpoint, pid_value=pid.pid_value, _external=True), code=302)

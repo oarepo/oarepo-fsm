@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 CESNET.
 #
@@ -7,9 +6,9 @@
 
 """OArepo FSM library for record state transitions"""
 
-from __future__ import absolute_import, print_function
+from flask import current_app
+from werkzeug.local import LocalProxy
 
-from .ext import OARepoFSM
-from .version import __version__
-
-__all__ = ('__version__', 'OARepoFSM')
+current_oarepo_fsm = LocalProxy(
+    lambda: current_app.extensions['oarepo-fsm'])
+"""Helper proxy to access fsm state object."""

@@ -56,15 +56,22 @@ model in your app, containing a FSMField column ::
 In your application config, the following configuration block needs to be present,
 referencing the model that you created in the step above ::
 
-    OAREPO_FSM = [{
-        # adds /fsm automatically to the route
-        item_route: '/records/<pid(recid):pid_value>',
-        fsm: RecordModelFSM,
-        # record $schema
-        schema: '',
-        # invenio permission factory
-        transition_permission_factory: ''
-    }]
+    OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS = {
+        'records': {
+            'json_schemas': [
+                'records/record-v1.0.0.json'
+            ],
+            'record_marshmallow': RecordSchemaV1,
+            'metadata_marshmallow': MetadataSchemaV1,
+
+            'record_class': Record,
+            'record_pid_type': 'recid',
+            'fsm_record_class': FSMRecord,
+
+            'transition_permission_factory': allow_authenticated,
+            'fsm_permission_factory': allow_authenticated,
+        }
+    }
 
 REST API Usage
 --------------

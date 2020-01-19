@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# examples is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """Pytest configuration.
@@ -18,6 +18,7 @@ import shutil
 import sys
 import uuid
 from collections import namedtuple
+from os.path import dirname, abspath
 
 import pytest
 from flask import Flask, make_response
@@ -29,19 +30,23 @@ from invenio_base.signals import app_loaded
 from invenio_db import db as _db, InvenioDB
 from invenio_indexer import InvenioIndexer
 from invenio_indexer.api import RecordIndexer
-from invenio_jsonschemas import InvenioJSONSchemas
+from invenio_jsonschemas import InvenioJSONSchemas, current_jsonschemas
+from invenio_pidstore import InvenioPIDStore
 from invenio_pidstore.minters import recid_minter
 from invenio_records import InvenioRecords, Record
 from invenio_records_rest import InvenioRecordsREST
+from invenio_records_rest.utils import allow_all, PIDConverter
 from invenio_records_rest.views import create_blueprint_from_app
 from invenio_rest import InvenioREST
-from invenio_search import current_search_client
+from invenio_search import current_search_client, InvenioSearch, current_search
 from invenio_search.cli import destroy, init
 from invenio_search.utils import build_index_name
 from sqlalchemy_utils import database_exists, create_database
 
 from oarepo_fsm import OARepoFSM
+from oarepo_fsm.models import FSMRecord
 from tests.helpers import set_identity
+from tests.marshmallow import StatefulRecordSchemaV1
 
 
 class JsonClient(FlaskClient):
@@ -53,10 +58,10 @@ class JsonClient(FlaskClient):
         return super().open(*args, **kwargs)
 
 
-@pytest.fixture(scope='module')
-def json_client(base_client):
+@pytest.fixture(scope='function')
+def json_client(base_client, app):
     """Test JSON client for the base application fixture."""
-    with JsonClient() as client:
+    with JsonClient(app) as client:
         yield client
 
 
@@ -81,7 +86,7 @@ def base_app():
 
     os.environ['INVENIO_INSTANCE_PATH'] = instance_path
 
-    app_ = Flask('oarepo-fsm-testapp', instance_path=instance_path)
+    app_ = Flask('examples-testapp', instance_path=instance_path)
     app_.config.update(
         TESTING=True,
         JSON_AS_ASCII=True,
@@ -95,12 +100,28 @@ def base_app():
         INVENIO_INSTANCE_PATH=instance_path,
         SEARCH_INDEX_PREFIX='test-',
         JSONSCHEMAS_HOST='localhost:5000',
-        SEARCH_ELASTIC_HOSTS=os.environ.get('SEARCH_ELASTIC_HOSTS', None)
+        PIDSTORE_RECID_FIELD='id',
+        SEARCH_ELASTIC_HOSTS=os.environ.get('SEARCH_ELASTIC_HOSTS', None),
+        OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS={
+            'records': {
+                'json_schemas': [
+                    'examples/stateful-record-v1.0.0.json'
+                ],
+                'record_class': Record,
+                'record_marshmallow': StatefulRecordSchemaV1,
+                'record_pid_type': 'recid',
+                'fsm_record_class': FSMRecord,
+
+                'transition_permission_factory': allow_all,
+                'fsm_permission_factory': allow_all,
+            },
+        },
     )
     app_.test_client_class = JsonClient
 
     InvenioDB(app_)
     InvenioIndexer(app_)
+    InvenioSearch(app_)
     print('oarepo fsm registered to app')
     OARepoFSM(app_)
 
@@ -113,6 +134,8 @@ def app(base_app):
 
     base_app._internal_jsonschemas = InvenioJSONSchemas(base_app)
     InvenioREST(base_app)
+    InvenioPIDStore(base_app)
+    base_app.url_map.converters['pid'] = PIDConverter
     InvenioRecordsREST(base_app)
     InvenioRecords(base_app)
 
@@ -156,7 +179,7 @@ def db(app):
     """Create database for the tests."""
     with app.app_context():
         if not database_exists(str(_db.engine.url)) and \
-          app.config['SQLALCHEMY_DATABASE_URI'] != 'sqlite://':
+            app.config['SQLALCHEMY_DATABASE_URI'] != 'sqlite://':
             create_database(_db.engine.url)
         _db.create_all()
 
@@ -172,12 +195,12 @@ def schemas(app):
     # trigger registration of new schemas, normally performed
     # via app_loaded signal that is not emitted in tests
     with app.app_context():
-        # TODO: register schemas
-        pass
-
+        project_dir = dirname(dirname(abspath(__file__)))
+        current_jsonschemas.register_schema(
+            '%s/examples/schemas/examples/' % project_dir, 'stateful-record-v1.0.0.json')
     return {
-        'oarepo-fsm-test':
-            'https://localhost:5000/schemas/oarepo-fsm-test-v1.0.0.json',
+        'stateful-record-v1.0.0':
+            'https://localhost:5000/schemas/examples/stateful-record-v1.0.0.json',
     }
 
 
@@ -186,8 +209,9 @@ def mappings(app, schemas):
     # trigger registration of new schemas, normally performed
     # via app_loaded signal that is not emitted in tests
     with app.app_context():
-        current_search_client.mappings['oarepo-fsm-test-v.1.0.0'] =\
-            'schemas/oarepo-fsm-test-v1.0.0.json'
+        project_dir = dirname(dirname(abspath(__file__)))
+        current_search.mappings['stateful-record-v1.0.0'] = \
+            '%s/examples/schemas/examples/stateful-record-v1.0.0.json' % project_dir
 
 
 @pytest.fixture()
@@ -201,9 +225,9 @@ def prepare_es(app, db):
     if result.exit_code:
         print(result.output, file=sys.stderr)
     assert result.exit_code == 0
-    aliases = current_search_client.indices.get_mapping("*")
+    indices = current_search_client.indices
 
-    assert build_index_name('oarepo-fsm-test-v1.0.0') in aliases
+    assert build_index_name('record-v1.0.0') in indices.get_mapping('*')
 
 
 TestUsers = namedtuple('TestUsers', ['u1', 'u2', 'u3', 'r1', 'r2'])
@@ -235,8 +259,8 @@ def test_record(app, db, schemas):
     # let's create a record
     record_uuid = uuid.uuid4()
     data = {
-        'title': 'blah',
-        '$schema': schemas['oarepo-fsm-test'],
+        'b': 'blah',
+        '$schema': schemas['stateful-record-v1.0.0'],
     }
     recid_minter(record_uuid, data)
     rec = Record.create(data, id_=record_uuid)

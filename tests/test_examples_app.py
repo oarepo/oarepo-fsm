@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# examples is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """Test example app."""
@@ -47,11 +47,3 @@ def example_app():
 
     # Return to the original directory
     os.chdir(current_dir)
-
-
-def test_example_app_role_admin(example_app, test_record):
-    """Test example app."""
-    cmd = 'curl http://0.0.0.0:5000/'
-    output = subprocess.check_output(cmd, shell=True)
-    assert test_record is None
-    assert b'Welcome to oarepo-fsm' in output

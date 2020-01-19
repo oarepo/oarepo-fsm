@@ -2,11 +2,13 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# examples is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 notifications:
   email: false
+
+dist: xenial
 
 sudo: false
 
@@ -14,48 +16,62 @@ language: python
 
 matrix:
   fast_finish: true
-  allow_failures:
-    # To allow failures, you need to specify the full environment
-    - env: REQUIREMENTS=devel
 
 cache:
   - pip
 
 env:
-  - REQUIREMENTS=lowest
-  - REQUIREMENTS=release DEPLOY=true
-  - REQUIREMENTS=devel
+  global:
+  - POSTGRESQL_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio"
+  - ES6_DOWNLOAD_URL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.0.tar.gz"
+  - ES7_DOWNLOAD_URL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.5.1-linux-x86_64.tar.gz"
+  - ES_HOST=127.0.0.1
+  matrix:
+  - REQUIREMENTS=release EXTRAS=all,postgresql,tests ES=$ES6_DOWNLOAD_URL SQLALCHEMY_DATABASE_URI=$POSTGRESQL_SQLALCHEMY_DATABASE_URI
+  - REQUIREMENTS=release EXTRAS=all,sqlite,tests ES=$ES6_DOWNLOAD_URL
+  - REQUIREMENTS=release EXTRAS=all,postgresql,tests ES=$ES6_DOWNLOAD_URL  OAREPO_VERSION=3.2.0 SQLALCHEMY_DATABASE_URI=$POSTGRESQL_SQLALCHEMY_DATABASE_URI
+  - REQUIREMENTS=release EXTRAS=all,sqlite,tests ES=$ES6_DOWNLOAD_URL  OAREPO_VERSION=3.2.0
+  - REQUIREMENTS=release EXTRAS=all,postgresql,tests-es7 ES=$ES7_DOWNLOAD_URL  OAREPO_VERSION=3.2.0 SQLALCHEMY_DATABASE_URI=$POSTGRESQL_SQLALCHEMY_DATABASE_URI
 
 python:
-  - "2.7"
-  - "3.5"
+- '3.7'
+- '3.8'
+
 
 before_install:
-  - "nvm install 6; nvm use 6"
-  - "travis_retry pip install --upgrade pip setuptools py"
-  - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder -e all --level=min setup.py > .travis-lowest-requirements.txt"
-  - "requirements-builder -e all --level=pypi setup.py > .travis-release-requirements.txt"
-  - "requirements-builder -e all --level=dev --req requirements-devel.txt setup.py > .travis-devel-requirements.txt"
+  - travis_retry pip install --upgrade pip setuptools py
+  - "travis_retry pip install twine wheel coveralls requirements-builder pip-tools"
+  - "requirements-builder -e $EXTRAS --level=pypi setup.py > .travis-release-requirements.in"
+  - "pip-compile -U --verbose -o .travis-release-requirements.txt .travis-release-requirements.in"
+  - cat .travis-release-requirements.txt
+  - mkdir /tmp/elasticsearch
+  - wget -O - $ES | tar xz --directory=/tmp/elasticsearch --strip-components=1
+  - "/tmp/elasticsearch/bin/elasticsearch &"
+  - sleep 10
 
 install:
-  - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -e .[all]"
+  - travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt
+  - travis_retry pip install -e .[$EXTRAS]
 
 script:
   - "./run-tests.sh"
 
 after_success:
   - coveralls
+  -
+# check if release tag is the same as version.py tag
+before_deploy:
+- |-
+  SRCTAG=$(find . -name "version.py" | grep -v 'build' | xargs cat | grep '__version__' | sed 's/__version__//' | sed 's/=//g' | sed 's/"//g' | sed "s/'//g" | sed 's/[ \t\n]//g')
+  test $SRCTAG == $TRAVIS_TAG
 
 deploy:
   provider: pypi
-  user: inveniosoftware
+  user: "__token__"
   password:
-    secure: TODO:PYPISECUREHASH
-  distributions: "compile_catalog sdist bdist_wheel"
+    secure: "TODO: secure token"
   on:
     tags: true
-    python: "2.7"
-    repo: oarepo/oarepo-fsm
-    condition: $DEPLOY = true
+    branch: master
+  distributions: "sdist bdist_wheel"
+  skip_existing: true

@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# examples is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """Sphinx configuration."""
@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'oarepo-fsm'
+project = u'examples'
 copyright = u'2020, CESNET'
 author = u'CESNET'
 
@@ -119,13 +119,13 @@ html_theme = 'alabaster'
 html_theme_options = {
     'description': 'OArepo FSM library for record state transitions',
     'github_user': 'inveniosoftware',
-    'github_repo': 'oarepo-fsm',
+    'github_repo': 'examples',
     'github_button': False,
     'github_banner': True,
     'show_powered_by': False,
     'extra_nav_links': {
-        'oarepo-fsm@GitHub': 'https://github.com/oarepo/oarepo-fsm',
-        'oarepo-fsm@PyPI': 'https://pypi.python.org/pypi/oarepo-fsm/',
+        'examples@GitHub': 'https://github.com/oarepo/oarepo-fsm',
+        'examples@PyPI': 'https://pypi.python.org/pypi/oarepo-fsm/',
     }
 }
 
@@ -252,7 +252,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'oarepo-fsm.tex', u'oarepo-fsm Documentation',
+    (master_doc, 'examples.tex', u'examples Documentation',
      u'CESNET', 'manual'),
 ]
 
@@ -282,7 +282,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'oarepo-fsm', u'oarepo-fsm Documentation',
+    (master_doc, 'examples', u'examples Documentation',
      [author], 1)
 ]
 
@@ -296,8 +296,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'oarepo-fsm', u'oarepo-fsm Documentation',
-     author, 'oarepo-fsm', 'OArepo FSM library for record state transitions',
+    (master_doc, 'examples', u'examples Documentation',
+     author, 'examples', 'OArepo FSM library for record state transitions',
      'Miscellaneous'),
 ]
 

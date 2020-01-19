@@ -1,0 +1,10 @@
+{
+  "StatefulRecord": {
+    "type": "nested",
+    "properties": {
+      "b": {
+        "type": "keyword"
+      }
+    }
+  }
+}

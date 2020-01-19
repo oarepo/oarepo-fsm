@@ -1,0 +1,10 @@
+version: '2.2'
+services:
+  oarepo-fsm-test-es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.0
+    container_name: examples-test-es
+    environment:
+      - node.name=es01
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - 9200:9200

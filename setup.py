@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# examples is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """OArepo FSM library for record state transitions"""
@@ -16,7 +16,8 @@ history = open('CHANGES.rst').read()
 OAREPO_VERSION = os.environ.get('OAREPO_VERSION', '3.1.1')
 
 install_requires = [
-    'wrapt>=1.11.2'
+    'wrapt>=1.11.2',
+    'sqlalchemy_fsm>=2.0.8'
 ]
 
 deploy_requires = [
@@ -49,7 +50,7 @@ with open(os.path.join('oarepo_fsm', 'version.py'), 'rt') as fp:
     version = g['__version__']
 
 setup(
-    name='oarepo-fsm',
+    name='examples',
     version=version,
     description=__doc__,
     long_description=readme + '\n\n' + history,

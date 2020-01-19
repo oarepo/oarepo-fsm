@@ -2,20 +2,27 @@
 #
 # Copyright (C) 2020 CESNET.
 #
-# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# examples is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
 """OArepo FSM library for record state transitions"""
 
-OAREPO_FSM = []
-"""Record's FSM model configurations.
-    OAREPO_FSM = [{
-        # adds /fsm automatically to the item route
-        item_route: '/records/<pid(recid):pid_value>',
-        fsm: RecordModelFSM,
-        # record $schema
-        schema: '',
-        # invenio permission factory
-        transition_permission_factory: ''
-    }]
+OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS = {}
+"""Record FSM endpoints configurations.
+    OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS = {
+        'records': {
+            'json_schemas': [
+                'records/stateful-stateful-record-v1.0.0.json'
+            ],
+            'record_marshmallow': RecordSchemaV1,
+            'metadata_marshmallow': MetadataSchemaV1,
+
+            'record_class': Record,
+            'record_pid_type': 'recid',
+            'fsm_record_class': FSMRecord,
+
+            'transition_permission_factory': allow_authenticated,
+            'fsm_permission_factory': allow_authenticated,
+        }
+    }
 """
