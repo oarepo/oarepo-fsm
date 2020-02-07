@@ -8,9 +8,9 @@
 from urllib.parse import urlsplit, urlunparse
 
 from flask import current_app
-from invenio_app.helpers import obj_or_import_string
 from invenio_indexer.utils import schema_to_index
 from invenio_jsonschemas import current_jsonschemas
+from invenio_records_rest.utils import obj_or_import_string
 from jsonref import JsonRef
 
 
@@ -46,11 +46,6 @@ def get_schema(schema_path):
     )
     return current_jsonschemas.resolver_cls(schema_data)
 
-
-def get_record_fsm_cls(record):
-
-    if not rec_cls:
-        return None
 
 def convert_relative_schema_to_absolute(x):
     """Convert relative record schema to absolute if needed."""

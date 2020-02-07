@@ -76,9 +76,9 @@ class _OARepoFSMState(object):
             # TODO: fix teh condition
             return signal_kwargs['index'] == 'records-v1.0.0'
 
-        before_record_index.dynamic_connect(
-            before_record_index_callback,
-            sender=app, condition_func=_fsm_enabled_record_condition)
+        # before_record_index.dynamic_connect(
+        #     before_record_index_callback,
+        #     sender=app, condition_func=_fsm_enabled_record_condition)
 
     def _register_blueprints(self, app):
         endpoint_configs = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})

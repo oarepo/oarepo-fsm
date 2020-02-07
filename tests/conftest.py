@@ -16,34 +16,36 @@ from __future__ import absolute_import, print_function
 import os
 import shutil
 import sys
-import uuid
-from collections import namedtuple
-from os.path import dirname, abspath
 
 import pytest
-from flask import Flask, make_response
-from flask_login import LoginManager, login_user
+from flask import Flask
 from flask_principal import Principal
-from invenio_accounts.models import User, Role
 from invenio_base.signals import app_loaded
 from invenio_db import db as _db, InvenioDB
 from invenio_indexer import InvenioIndexer
 from invenio_indexer.api import RecordIndexer
-from invenio_jsonschemas import InvenioJSONSchemas, current_jsonschemas
-from invenio_pidstore import InvenioPIDStore
-from invenio_pidstore.minters import recid_minter
-from invenio_records import InvenioRecords, Record
-from invenio_records_rest import InvenioRecordsREST
-from invenio_records_rest.utils import allow_all, PIDConverter
-from invenio_records_rest.views import create_blueprint_from_app
-from invenio_rest import InvenioREST
-from invenio_search import current_search_client, InvenioSearch, current_search, RecordsSearch
-from invenio_search.cli import destroy, init
-from invenio_search.utils import build_index_name
+from invenio_records_rest.utils import allow_all
+from invenio_search import InvenioSearch, RecordsSearch
 from sqlalchemy_utils import database_exists, create_database
-from oarepo_fsm import OARepoFSM
+
 from oarepo_fsm.links import fsm_links_factory
-from tests.helpers import set_identity
+
+#
+@pytest.fixture
+def db(app):
+    """Create database for the tests."""
+    # _db = SQLAlchemy(app)
+    with app.app_context():
+        if not database_exists(str(_db.engine.url)) and \
+            app.config['SQLALCHEMY_DATABASE_URI'] != 'sqlite://':
+            create_database(_db.engine.url)
+        _db.create_all()
+
+    yield _db
+
+    # Explicitly close DB connection
+    _db.session.close()
+    _db.drop_all()
 
 
 @pytest.yield_fixture()
@@ -53,17 +55,8 @@ def client(app):
         yield client
 
 
-@pytest.fixture(scope='module')
-def celery_config():
-    """Override pytest-invenio fixture.
-
-    TODO: Remove this fixture if you add Celery support.
-    """
-    return {}
-
-
 @pytest.fixture()
-def base_app():
+def b_app():
     """Base Flask application fixture."""
     instance_path = os.path.join(sys.prefix, 'var', 'test-instance')
 
@@ -79,6 +72,7 @@ def base_app():
         TESTING=True,
         JSON_AS_ASCII=True,
         SQLALCHEMY_TRACK_MODIFICATIONS=True,
+        SQLALCHEMY_ECHO=True,
         SQLALCHEMY_DATABASE_URI=os.environ.get(
             'SQLALCHEMY_DATABASE_URI',
             'sqlite:///:memory:'),
@@ -132,153 +126,45 @@ def base_app():
     )
 
     InvenioDB(app_)
-
-    from examples.models import ExampleFSM, ExampleRecord
-
     InvenioIndexer(app_)
     InvenioSearch(app_)
     return app_
 
 
 @pytest.yield_fixture()
-def app(base_app):
+def app(b_app):
     """Flask application fixture."""
-    base_app._internal_jsonschemas = InvenioJSONSchemas(base_app)
-    InvenioREST(base_app)
-    InvenioPIDStore(base_app)
-    base_app.url_map.converters['pid'] = PIDConverter
-    InvenioRecordsREST(base_app)
-    InvenioRecords(base_app)
-    base_app.register_blueprint(create_blueprint_from_app(base_app))
+    # base_app._internal_jsonschemas = InvenioJSONSchemas(base_app)
+    # InvenioREST(base_app)
+    # InvenioPIDStore(base_app)
+    # base_app.url_map.converters['pid'] = PIDConverter
+    # InvenioRecordsREST(base_app)
+    # InvenioRecords(base_app)
+    # base_app.register_blueprint(create_blueprint_from_app(base_app))
 
-    OARepoFSM(base_app)
+    # OARepoFSM(base_app)
 
-    principal = Principal(base_app)
+    principal = Principal(b_app)
 
-    login_manager = LoginManager()
-    login_manager.init_app(base_app)
-    login_manager.login_view = 'login'
+    # login_manager = LoginManager()
+    # login_manager.init_app(base_app)
+    # login_manager.login_view = 'login'
 
-    @login_manager.user_loader
-    def basic_user_loader(user_id):
-        user_obj = User.query.get(int(user_id))
-        return user_obj
+    # @login_manager.user_loader
+    # def basic_user_loader(user_id):
+    #     user_obj = User.query.get(int(user_id))
+    #     return user_obj
 
-    @base_app.route('/test/login/<int:id>', methods=['GET', 'POST'])
-    def test_login(id):
-        print("test: logging user with id", id)
-        response = make_response()
-        user = User.query.get(id)
-        login_user(user)
-        set_identity(user)
-        return response
+    # @base_app.route('/test/login/<int:id>', methods=['GET', 'POST'])
+    # def test_login(id):
+    #     print("test: logging user with id", id)
+    #     response = make_response()
+    #     user = User.query.get(id)
+    #     login_user(user)
+    #     set_identity(user)
+    #     return response
 
-    app_loaded.send(None, app=base_app)
+    app_loaded.send(None, app=b_app)
 
-    with base_app.app_context():
-        yield base_app
-
-
-@pytest.yield_fixture()
-def client(app):
-    """Get test client."""
-    with app.test_client() as client:
-        yield client
-
-
-@pytest.fixture
-def db(app):
-    """Create database for the tests."""
-    with app.app_context():
-        if not database_exists(str(_db.engine.url)) and \
-            app.config['SQLALCHEMY_DATABASE_URI'] != 'sqlite://':
-            create_database(_db.engine.url)
-        _db.create_all()
-
-    yield _db
-
-    # Explicitly close DB connection
-    _db.session.close()
-    _db.drop_all()
-
-
-@pytest.fixture
-def schemas(app):
-    # trigger registration of new schemas, normally performed
-    # via app_loaded signal that is not emitted in tests
-    with app.app_context():
-        project_dir = dirname(dirname(abspath(__file__)))
-        current_jsonschemas.register_schema(
-            '%s/examples/schemas/examples/' % project_dir, 'stateful-record-v1.0.0.json')
-    return {
-        'stateful-record-v1.0.0':
-            'https://localhost:5000/schemas/stateful-record-v1.0.0.json',
-    }
-
-
-@pytest.fixture
-def mappings(app, schemas):
-    # trigger registration of new schemas, normally performed
-    # via app_loaded signal that is not emitted in tests
-    with app.app_context():
-        project_dir = dirname(dirname(abspath(__file__)))
-        current_search.mappings['stateful-record-v1.0.0'] = \
-            '%s/examples/schemas/examples/stateful-record-v1.0.0.json' % project_dir
-
-
-@pytest.fixture()
-def prepare_es(app, db):
-    runner = app.test_cli_runner()
-    result = runner.invoke(destroy, ['--yes-i-know', '--force'])
-    if result.exit_code:
-        print(result.output, file=sys.stderr)
-    assert result.exit_code == 0
-    result = runner.invoke(init)
-    if result.exit_code:
-        print(result.output, file=sys.stderr)
-    assert result.exit_code == 0
-    indices = current_search_client.indices
-
-    assert build_index_name('stateful-record-v1.0.0') in indices.get_mapping('*')
-
-
-TestUsers = namedtuple('TestUsers', ['u1', 'u2', 'u3', 'r1', 'r2'])
-
-
-@pytest.fixture()
-def test_users(app, db):
-    """Returns named tuple (u1, u2, u3, r1, r2)."""
-    with db.session.begin_nested():
-        r1 = Role(name='role1')
-        r2 = Role(name='role2')
-
-        u1 = User(id=1, email='1@test.com', active=True, roles=[r1])
-        u2 = User(id=2, email='2@test.com', active=True, roles=[r1, r2])
-        u3 = User(id=3, email='3@test.com', active=True, roles=[r2])
-
-        db.session.add(u1)
-        db.session.add(u2)
-        db.session.add(u3)
-
-        db.session.add(r1)
-        db.session.add(r2)
-
-    return TestUsers(u1, u2, u3, r1, r2)
-
-
-@pytest.fixture(scope='function')
-def test_record(app, db, schemas):
-    # let's create a record
-    record_uuid = uuid.uuid4()
-    data = {
-        'b': 'blah',
-        '$schema': schemas['stateful-record-v1.0.0'],
-    }
-    recid_minter(record_uuid, data)
-    from examples.models import ExampleRecord
-    rec = ExampleRecord.create(data, id_=record_uuid)
-    RecordIndexer().index(rec)
-    current_search_client.indices.refresh()
-    current_search_client.indices.flush()
-
-    return rec
+    with b_app.app_context():
+        yield b_app

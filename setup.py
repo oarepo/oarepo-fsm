@@ -64,8 +64,11 @@ setup(
     include_package_data=True,
     platforms='any',
     entry_points={
+        'invenio_db.alembic': [
+            'oarepo_fsm = examples:alembic',
+        ],
         'invenio_db.models': [
-            'oarepo_fsm = examples.models',
+            'oarepo_fsm = examples',
         ],
         'invenio_base.apps': [
             'oarepo_fsm = oarepo_fsm.ext:OARepoFSM',

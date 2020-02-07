@@ -9,14 +9,7 @@
 
 from __future__ import absolute_import, print_function
 
-import pytest
-from flask import Flask
-
-from oarepo_fsm import OARepoFSM
-from oarepo_fsm.ext import _OARepoFSMState
-from oarepo_fsm.proxies import current_oarepo_fsm
-
-
-def test_init(app):
-    """Test blueprint initialization."""
-    assert 'oarepo_fsm' in app.blueprints
+#
+# def test_init(app):
+#     """Test blueprint initialization."""
+#     assert 'oarepo_fsm' in app.blueprints

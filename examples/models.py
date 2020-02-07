@@ -7,7 +7,6 @@ from sqlalchemy_utils import UUIDType
 
 
 class ExampleRecord(Record):
-
     @property
     def fsm_class(self):
         return ExampleFSM
@@ -15,14 +14,17 @@ class ExampleRecord(Record):
 
 class ExampleFSM(db.Model):
     """Example FSM enabled record."""
-    __tablename__ = 'examplefsm'
+
+    def __init__(self):
+        self.state = 'closed'
+        super(ExampleFSM, self).__init__()
 
     record_uuid = db.Column(
         UUIDType,
         primary_key=True,
         default=uuid.uuid4,
     )
-    state = db.Column(FSMField, nullable=False)
+    state = db.Column(FSMField, default='closed', nullable=False)
 
     @transition(source='closed', target='opened')
     def open(self, instance, value):

@@ -13,8 +13,9 @@ def before_record_index_callback(sender, json=None, record=None, index=None,
 
 
 def after_record_insert_callback(sender, *args, **kwargs):
-    record = kwargs['record']
-    FSMRecord.create(record=record, state=current_oarepo_fsm.get_initial_state(record))
+    pass
+    # record = kwargs['record']
+    # FSMRecord.create(record=record, state=current_oarepo_fsm.get_initial_state(record))
 
 
 class FSMRecord(object):
