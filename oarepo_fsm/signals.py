@@ -5,14 +5,9 @@
 # the terms of the MIT License; see LICENSE file for more details.
 
 """OArepo FSM library for record state transitions"""
+from blinker import Namespace
 
+_signals = Namespace()
 
-def before_record_index_callback(sender, json=None, record=None, index=None,
-                                 doc_type=None, arguments=None, **kwargs):
-    # TODO: implement callback
-    pass
-
-
-def after_record_insert_callback(sender, *args, **kwargs):
-    record = kwargs['record']
-    # TODO: implement callback
+before_fsmrecord_insert = _signals.signal('before-fsmrecord-insert')
+after_fsmrecord_insert = _signals.signal('after-fsmrecord-insert')

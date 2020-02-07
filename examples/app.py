@@ -45,14 +45,10 @@ from __future__ import absolute_import, print_function
 
 from flask import Flask
 from flask_babelex import Babel
-from invenio_records_rest.schemas import StrictKeysMixin
-from invenio_records_rest.schemas.fields import SanitizedUnicode
 
 from oarepo_fsm import OARepoFSM
-from oarepo_fsm.views import blueprint
 
 # Create Flask application
 app = Flask(__name__)
 Babel(app)
 OARepoFSM(app)
-app.register_blueprint(blueprint)

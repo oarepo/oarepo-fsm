@@ -22,7 +22,6 @@ from os.path import dirname, abspath
 
 import pytest
 from flask import Flask, make_response
-from flask.testing import FlaskClient
 from flask_login import LoginManager, login_user
 from flask_principal import Principal
 from invenio_accounts.models import User, Role
@@ -38,30 +37,19 @@ from invenio_records_rest import InvenioRecordsREST
 from invenio_records_rest.utils import allow_all, PIDConverter
 from invenio_records_rest.views import create_blueprint_from_app
 from invenio_rest import InvenioREST
-from invenio_search import current_search_client, InvenioSearch, current_search
+from invenio_search import current_search_client, InvenioSearch, current_search, RecordsSearch
 from invenio_search.cli import destroy, init
 from invenio_search.utils import build_index_name
 from sqlalchemy_utils import database_exists, create_database
-
 from oarepo_fsm import OARepoFSM
-from oarepo_fsm.models import FSMRecord
+from oarepo_fsm.links import fsm_links_factory
 from tests.helpers import set_identity
-from tests.marshmallow import StatefulRecordSchemaV1
 
 
-class JsonClient(FlaskClient):
-    """JsonClient class."""
-
-    def open(self, *args, **kwargs):
-        kwargs.setdefault('content_type', 'application/json')
-        kwargs.setdefault('Accept', 'application/json')
-        return super().open(*args, **kwargs)
-
-
-@pytest.fixture(scope='function')
-def json_client(base_client, app):
-    """Test JSON client for the base application fixture."""
-    with JsonClient(app) as client:
+@pytest.yield_fixture()
+def client(app):
+    """Get test client."""
+    with app.test_client() as client:
         yield client
 
 
@@ -99,47 +87,71 @@ def base_app():
         SECRET_KEY='TEST_SECRET_KEY',
         INVENIO_INSTANCE_PATH=instance_path,
         SEARCH_INDEX_PREFIX='test-',
+        INDEXER_DEFAULT_INDEX="examples-stateful-record-v1.0.0",
         JSONSCHEMAS_HOST='localhost:5000',
         PIDSTORE_RECID_FIELD='id',
         SEARCH_ELASTIC_HOSTS=os.environ.get('SEARCH_ELASTIC_HOSTS', None),
+        RECORDS_REST_ENDPOINTS=dict(
+            records=dict(
+                pid_type='recid',
+                pid_minter='recid',
+                pid_fetcher='recid',
+                search_class=RecordsSearch,
+                indexer_class=RecordIndexer,
+                search_index=None,
+                default_endpoint_prefix=True,
+                search_type=None,
+                links_factory_imp=fsm_links_factory,
+                record_serializers={
+                    'application/json': ('invenio_records_rest.serializers'
+                                         ':json_v1_response'),
+                },
+                search_serializers={
+                    'application/json': ('invenio_records_rest.serializers'
+                                         ':json_v1_search'),
+                },
+                list_route='/records/',
+                item_route='/records/<pid(recid):pid_value>',
+                default_media_type='application/json',
+                max_result_window=10000,
+                error_handlers=dict(),
+            ),
+        ),
         OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS={
             'records': {
+                'initial_state': 'opened',
                 'json_schemas': [
-                    'examples/stateful-record-v1.0.0.json'
+                    'https://localhost:5000/schemas/stateful-record-v1.0.0.json'
                 ],
-                'record_class': Record,
-                'record_marshmallow': StatefulRecordSchemaV1,
-                'record_pid_type': 'recid',
-                'fsm_record_class': FSMRecord,
-
+                'record_class': 'examples.models.ExampleRecord',
+                'pid_type': 'recid',
                 'transition_permission_factory': allow_all,
                 'fsm_permission_factory': allow_all,
             },
         },
     )
-    app_.test_client_class = JsonClient
 
     InvenioDB(app_)
+
+    from examples.models import ExampleFSM, ExampleRecord
+
     InvenioIndexer(app_)
     InvenioSearch(app_)
-    print('oarepo fsm registered to app')
-    OARepoFSM(app_)
-
     return app_
 
 
 @pytest.yield_fixture()
 def app(base_app):
     """Flask application fixture."""
-
     base_app._internal_jsonschemas = InvenioJSONSchemas(base_app)
     InvenioREST(base_app)
     InvenioPIDStore(base_app)
     base_app.url_map.converters['pid'] = PIDConverter
     InvenioRecordsREST(base_app)
     InvenioRecords(base_app)
-
     base_app.register_blueprint(create_blueprint_from_app(base_app))
+
+    OARepoFSM(base_app)
 
     principal = Principal(base_app)
 
@@ -200,7 +212,7 @@ def schemas(app):
             '%s/examples/schemas/examples/' % project_dir, 'stateful-record-v1.0.0.json')
     return {
         'stateful-record-v1.0.0':
-            'https://localhost:5000/schemas/examples/stateful-record-v1.0.0.json',
+            'https://localhost:5000/schemas/stateful-record-v1.0.0.json',
     }
 
 
@@ -227,7 +239,7 @@ def prepare_es(app, db):
     assert result.exit_code == 0
     indices = current_search_client.indices
 
-    assert build_index_name('record-v1.0.0') in indices.get_mapping('*')
+    assert build_index_name('stateful-record-v1.0.0') in indices.get_mapping('*')
 
 
 TestUsers = namedtuple('TestUsers', ['u1', 'u2', 'u3', 'r1', 'r2'])
@@ -263,7 +275,8 @@ def test_record(app, db, schemas):
         '$schema': schemas['stateful-record-v1.0.0'],
     }
     recid_minter(record_uuid, data)
-    rec = Record.create(data, id_=record_uuid)
+    from examples.models import ExampleRecord
+    rec = ExampleRecord.create(data, id_=record_uuid)
     RecordIndexer().index(rec)
     current_search_client.indices.refresh()
     current_search_client.indices.flush()

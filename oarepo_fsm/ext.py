@@ -9,20 +9,16 @@
 
 from __future__ import absolute_import, print_function
 
-import copy
-
 from flask import Blueprint, url_for
 from invenio_base.signals import app_loaded
 from invenio_indexer.signals import before_record_index
+from invenio_records import Record
 from invenio_records.signals import after_record_insert
-from invenio_records_rest import current_records_rest
-from invenio_records_rest.utils import build_default_endpoint_prefixes
-from invenio_records_rest.views import create_url_rules
+from sqlalchemy.orm.exc import NoResultFound
 
 from . import config
-from .endpoints import create_fsm_endpoint, pid_getter
-from .signals import before_record_index_callback, after_record_insert_callback
-from .utils import get_search_index
+from .api import FSMRecord, after_record_insert_callback, before_record_index_callback
+from .utils import convert_relative_schema_to_absolute, pid_getter
 from .views import FSMRecordAction
 
 
@@ -32,17 +28,42 @@ class _OARepoFSMState(object):
     def __init__(self, app):
         """Initialize state."""
         self.app = app
-        self._fsm_endpoints = {}
-
-    @property
-    def fsm_endpoints(self):
-        return self._fsm_endpoints
+        self.schema_map = {}
 
     def app_loaded(self, app):
         with app.app_context():
             self._register_blueprints(app)
             self._connect_model_callbacks(app)
             self._connect_index_callbacks(app)
+            self._prepare_schema_map(app)
+
+    def get_initial_state(self, record: Record):
+        config = self.schema_map.get(record['$schema'], None)
+        return config.get('initial_state', 'initial')
+
+    def get_record_fsm_prefix(self, record):
+        schema = record.get('$schema', None)
+        if not schema:
+            return None
+
+        schema = convert_relative_schema_to_absolute(schema)
+        config = self.schema_map.get(schema, None)
+        if not config:
+            return None
+        return config['prefix']
+
+    def get_fsm_record(self, record):
+        try:
+            return FSMRecord.get_fsm_record(record)
+        except NoResultFound:
+            return None
+
+    def _prepare_schema_map(self, app):
+        config = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})
+        for prefix, item in config.items():
+            schemas = item.get('json_schemas', [])
+            for sch in schemas:
+                self.schema_map[convert_relative_schema_to_absolute(sch)] = {'prefix': prefix, **item}
 
     def _connect_model_callbacks(self, app):
         after_record_insert.connect(after_record_insert_callback)
@@ -60,72 +81,7 @@ class _OARepoFSMState(object):
             sender=app, condition_func=_fsm_enabled_record_condition)
 
     def _register_blueprints(self, app):
-        if 'invenio_records_rest' not in app.blueprints:
-            return
-
-        permission_factories = {}
         endpoint_configs = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})
-
-        rest_blueprint = app.blueprints['invenio_records_rest']
-        last_deferred_function_index = len(rest_blueprint.deferred_functions)
-
-        for url_prefix, config in endpoint_configs.items():
-            config = copy.copy(config)
-
-            json_schemas = config.pop('json_schemas', [])
-            if not isinstance(json_schemas, (list, tuple)):
-                json_schemas = [json_schemas]
-
-            fsm_endpoint = f'state_{url_prefix}'
-            record_endpoint = url_prefix
-            record_marshmallow = config.pop('record_marshmallow')
-            record_pid_type = config.pop('record_pid_type')
-
-            fsm_index = (
-                config.pop('fsm_search_index', None) or
-                config.pop('search_index', None)
-            )
-
-            if not fsm_index:
-                fsm_index = get_search_index(json_schemas, url_prefix)
-
-            transition_permission_factory = config.pop('transition_permission_factory')
-            fsm_permission_factory = config.pop('fsm_permission_factory')
-
-            permission_factories[url_prefix] = {
-                'transition_permission_factory': transition_permission_factory,
-                'fsm_permission_factory': fsm_permission_factory,
-            }
-
-            fsm_endpoint_config = create_fsm_endpoint(
-                url_prefix=url_prefix,
-                fsm_endpoint=fsm_endpoint,
-                record_endpoint=record_endpoint,
-                record_pid_type=record_pid_type,
-                search_index=fsm_index,
-                record_marshmallow=record_marshmallow,
-                transition_permission_factory=transition_permission_factory,
-                fsm_permission_factory=fsm_permission_factory,
-                **config
-            )
-
-            for rule in create_url_rules(fsm_endpoint, **fsm_endpoint_config):
-                rest_blueprint.add_url_rule(**rule)
-
-            default_prefixes = build_default_endpoint_prefixes({
-                fsm_endpoint: fsm_endpoint_config,
-            })
-            current_records_rest.default_endpoint_prefixes.update(default_prefixes)
-            fsm_endpoint_config['endpoint'] = fsm_endpoint
-            fsm_endpoint_config['fsm_record_class'] = config.pop('fsm_record_class')
-            self.fsm_endpoints[url_prefix] = {
-                **fsm_endpoint_config,
-                **permission_factories[url_prefix]
-            }
-
-        state = rest_blueprint.make_setup_state(app, {}, False)
-        for deferred in rest_blueprint.deferred_functions[last_deferred_function_index:]:
-            deferred(state)
 
         fsm_blueprint = Blueprint(
             'oarepo_fsm',
@@ -133,26 +89,18 @@ class _OARepoFSMState(object):
             url_prefix='/'
         )
 
-        for prefix, config in self.fsm_endpoints.items():
-            fsm_endpoint_name = config['endpoint']
-            permissions = permission_factories[prefix]
-
-            fsm_url = url_for(
-                'invenio_records_rest.{0}_list'.format(fsm_endpoint_name),
+        for prefix, config in endpoint_configs.items():
+            record_list_url = url_for(
+                'invenio_records_rest.{0}_list'.format(prefix),
                 _external=False)
-
             fsm_blueprint.add_url_rule(
-                rule=f'{fsm_url}{pid_getter(config)}/fsm',
+                rule=f'{record_list_url}{pid_getter(config)}/fsm',
                 view_func=FSMRecordAction.as_view(
-                    FSMRecordAction.view_name.format(fsm_endpoint_name),
-                    fsm_permission_factory=permissions['fsm_permission_factory'],
-                    transition_permission_factory=permissions['transition_permission_factory'],
-                    fsm_record_class=config['fsm_record_class'],
+                    FSMRecordAction.view_name.format(prefix),
                     fsm_pid_type=config['pid_type'],
-                    fsm_endpoint_name=fsm_endpoint_name
                 ))
 
-            app.register_blueprint(fsm_blueprint)
+        app.register_blueprint(fsm_blueprint)
 
 
 class OARepoFSM(object):
@@ -180,5 +128,3 @@ class OARepoFSM(object):
         for k in dir(config):
             if k.startswith('OAREPO_FSM'):
                 app.config.setdefault(k, getattr(config, k))
-
-        app.config['RECORDS_REST_ENDPOINTS'] = {}
