@@ -13,10 +13,10 @@ from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError
 def has_permission(f):
     """Decorator to check the transition should be manually triggered."""
     def inner(self, record, **kwargs):
-        if self.permission_factory and not self.permission_factory(record).can():
-            raise InvalidPermissionError(
-                permission=self.permission_factory(record)
-            )
+        # if self.permission_factory and not self.permission_factory(record).can():
+        #     raise InvalidPermissionError(
+        #         permission=self.permission_factory(record)
+        #     )
         return f(self, record, **kwargs)
     return inner
 
@@ -54,8 +54,8 @@ class Transition(object):
 def transition(obj: Transition):
     def inner(f):
         def wrapper(self, *args, **kwargs):
-            obj.execute(self, *args, **kwargs)
-            f(*args, **kwargs)
+            obj.execute(record=self, **kwargs)
+            f(self, *args, **kwargs)
         wrapper._fsm = obj
         return wrapper
     return inner

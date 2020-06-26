@@ -57,15 +57,6 @@ def json_headers(app):
     ]
 
 
-@pytest.fixture(scope="session")
-def test_data():
-    """Load test records."""
-    path = "data/loans.json"
-    with open(join(dirname(__file__), path)) as fp:
-        loans = json.load(fp)
-    yield loans
-
-
 # @pytest.fixture()
 # def test_records(db, test_data):
 #     """Load test records."""

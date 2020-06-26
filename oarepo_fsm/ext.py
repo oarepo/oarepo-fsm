@@ -16,7 +16,6 @@ from invenio_records import Record
 from invenio_records.signals import after_record_insert
 
 from . import config
-from .api import after_record_insert_callback, before_record_index_callback
 from .utils import convert_relative_schema_to_absolute, pid_getter
 from .views import FSMRecordAction
 
@@ -51,7 +50,6 @@ class _OARepoFSMState(object):
             return None
         return config['prefix']
 
-
     def _prepare_schema_map(self, app):
         config = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})
         for prefix, item in config.items():
@@ -60,19 +58,10 @@ class _OARepoFSMState(object):
                 self.schema_map[convert_relative_schema_to_absolute(sch)] = {'prefix': prefix, **item}
 
     def _connect_model_callbacks(self, app):
-        after_record_insert.connect(after_record_insert_callback)
+        return
 
     def _connect_index_callbacks(self, app):
-        def _fsm_enabled_record_condition(sender, connect_kwargs, **signal_kwargs):
-            # "connect_kwargs" are keyword arguments passed to ".dynamic_connect()
-            # "signal_kwargs" are keyword arguemtns passed by the
-            # "before_record_index.send()" call
-            # TODO: fix teh condition
-            return signal_kwargs['index'] == 'records-v1.0.0'
-
-        before_record_index.dynamic_connect(
-            before_record_index_callback,
-            sender=app, condition_func=_fsm_enabled_record_condition)
+        return
 
     def _register_blueprints(self, app):
         endpoint_configs = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})

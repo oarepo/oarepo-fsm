@@ -6,17 +6,6 @@ from oarepo_fsm.proxies import current_oarepo_fsm
 from oarepo_fsm.signals import before_fsmrecord_insert, after_fsmrecord_insert
 
 
-def before_record_index_callback(sender, json=None, record=None, index=None,
-                                 doc_type=None, arguments=None, **kwargs):
-    # TODO: implement callback
-    pass
-
-
-def after_record_insert_callback(sender, *args, **kwargs):
-    record = kwargs['record']
-    FSMRecord.create(record=record, state=current_oarepo_fsm.get_initial_state(record))
-
-
 class StatefulRecord(object):
     """Define API for metadata creation and manipulation."""
 
