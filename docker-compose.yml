@@ -1,0 +1,11 @@
+version: '2.3'
+services:
+  db:
+    image: postgres:9.6
+    restart: "always"
+    environment:
+      - "POSTGRES_USER=oarepo-fsm"
+      - "POSTGRES_PASSWORD=oarepo-fsm"
+      - "POSTGRES_DB=oarepo-fsm"
+    ports:
+      - "127.0.0.1:5432:5432"

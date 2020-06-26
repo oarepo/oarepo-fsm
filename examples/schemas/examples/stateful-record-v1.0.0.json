@@ -1,13 +1,25 @@
 {
-  "definitions": {
-    "StatefulRecord": {
-      "type": "object",
-      "required": ["b"],
-      "properties": {
-        "b": {
-          "type": "string"
-        }
-      }
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "title": "Schema",
+      "type": "string"
+    },
+    "title": {
+      "title": "Record title",
+      "type": "string"
+    },
+    "state": {
+      "title": "State name",
+      "type": "string"
+    },
+    "pid": {
+      "title": "Record ID",
+      "type": "string"
     }
-  }
+  },
+  "required": ["$schema", "title", "state", "pid"],
+  "title": "Schema for example",
+  "type": "object"
 }

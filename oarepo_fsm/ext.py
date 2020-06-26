@@ -14,10 +14,9 @@ from invenio_base.signals import app_loaded
 from invenio_indexer.signals import before_record_index
 from invenio_records import Record
 from invenio_records.signals import after_record_insert
-from sqlalchemy.orm.exc import NoResultFound
 
 from . import config
-from .api import FSMRecord, after_record_insert_callback, before_record_index_callback
+from .api import after_record_insert_callback, before_record_index_callback
 from .utils import convert_relative_schema_to_absolute, pid_getter
 from .views import FSMRecordAction
 
@@ -52,11 +51,6 @@ class _OARepoFSMState(object):
             return None
         return config['prefix']
 
-    def get_fsm_record(self, record):
-        try:
-            return FSMRecord.get_fsm_record(record)
-        except NoResultFound:
-            return None
 
     def _prepare_schema_map(self, app):
         config = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})

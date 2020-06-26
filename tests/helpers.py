@@ -6,21 +6,37 @@
 # the terms of the MIT License; see LICENSE file for more details.
 
 """Pytest helper methods."""
-import flask
-import requests
-from flask import current_app
-from flask_principal import Identity, identity_changed
-from invenio_access import authenticated_user
+import copy
+import uuid
 
-def header_links(resp):
-    links = requests.utils.parse_header_links(resp.headers['link'])
-    return {
-        link['rel']: link['url'] for link in links
-    }
+from invenio_db import db
+from invenio_pidstore.providers.recordid import RecordIdProvider
+from invenio_records_rest.utils import allow_all
 
-def set_identity(u):
-    """Sets identity in flask.g to the user."""
-    identity = Identity(u.id)
-    identity.provides.add(authenticated_user)
-    identity_changed.send(current_app._get_current_object(), identity=identity)
-    assert flask.g.identity.id == u.id
+from examples.models import ExampleRecord
+
+
+def record_pid_minter(record_uuid, data):
+    """Mint loan identifiers."""
+    assert "pid" not in data
+    provider = RecordIdProvider.create(
+        object_type='rec',
+        object_uuid=record_uuid,
+    )
+    data["pid"] = provider.pid.pid_value
+    return provider.pid
+
+
+def create_record(data):
+    """Create a test record."""
+    with db.session.begin_nested():
+        data = copy.deepcopy(data)
+        rec_uuid = uuid.uuid4()
+        pid = record_pid_minter(rec_uuid, data)
+        record = ExampleRecord.create(data, id_=rec_uuid)
+        return pid, record
+
+
+def test_views_permissions_factory(action):
+    """Test permissions factory."""
+    return allow_all()

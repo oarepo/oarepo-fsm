@@ -7,16 +7,7 @@
 """OArepo FSM library for record state transitions"""
 from flask import current_app
 
-from oarepo_fsm.errors import InvalidPermissionError
-
-
-def transition(definition):
-    def inner(f):
-        def wrapper(self, *args, **kwargs):
-            f(*args, **kwargs)
-        wrapper._fsm = definition
-        return wrapper
-    return inner
+from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError
 
 
 def has_permission(f):
@@ -30,8 +21,8 @@ def has_permission(f):
     return inner
 
 
-class TransitionDefinition(object):
-    """A transition specification."""
+class Transition(object):
+    """A transition class."""
 
     def __init__(
         self, src, dest, permission_factory=None, **kwargs
@@ -39,19 +30,32 @@ class TransitionDefinition(object):
         """Init transition object."""
         self.src = src
         self.dest = dest
-        self.initial_state = None
-        default_perm = current_app.config[
-            "OAREPO_FSM_DEFAULT_PERMISSION_FACTORY"
-        ]
-        self.permission_factory = permission_factory or default_perm
-        self.validate_transition_states()
+        # self.initial_state = current_app.config.get(
+        #     'OAREPO_FSM_INITIAL_STATE', None
+        # )
+        # default_perm = current_app.config[
+        #     'OAREPO_FSM_DEFAULT_PERMISSION_FACTORY'
+        # ]
+        # self.permission_factory = permission_factory or default_perm
+
+    def validate_source_state(self, record):
+        """Ensure that source and destination states are valid."""
+        if record['state'] != self.src:
+            raise InvalidSourceStateError(source=self.src, target=self.dest)
 
     @has_permission
-    def execute(self, loan, **kwargs):
-        """Execute before actions, transition and after actions."""
-        self._date_fields2datetime(kwargs)
-        loan.date_fields2datetime()
+    def execute(self, record, **kwargs):
+        """Execute transition when conditions are met."""
+        self.validate_source_state(record)
 
-        self.before(loan, **kwargs)
-        loan["state"] = self.dest
-        self.after(loan)
+        record['state'] = self.dest
+
+
+def transition(obj: Transition):
+    def inner(f):
+        def wrapper(self, *args, **kwargs):
+            obj.execute(self, *args, **kwargs)
+            f(*args, **kwargs)
+        wrapper._fsm = obj
+        return wrapper
+    return inner
