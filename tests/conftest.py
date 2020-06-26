@@ -132,9 +132,6 @@ def base_app():
     )
 
     InvenioDB(app_)
-
-    from examples.models import ExampleFSM, ExampleRecord
-
     InvenioIndexer(app_)
     InvenioSearch(app_)
     return app_

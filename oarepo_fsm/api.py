@@ -17,7 +17,7 @@ def after_record_insert_callback(sender, *args, **kwargs):
     FSMRecord.create(record=record, state=current_oarepo_fsm.get_initial_state(record))
 
 
-class FSMRecord(object):
+class StatefulRecord(object):
     """Define API for metadata creation and manipulation."""
 
     @classmethod
