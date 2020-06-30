@@ -9,25 +9,24 @@
 from __future__ import absolute_import, print_function
 
 from flask import jsonify
-from flask.views import MethodView
 from invenio_records_rest.views import need_record_permission, pass_record
+from invenio_rest import ContentNegotiatedMethodView
 from sqlalchemy.inspection import inspect
 from sqlalchemy_fsm import FSMField
-from sqlalchemy_fsm.transition import InstanceBoundFsmTransition, ClassBoundFsmTransition
+from sqlalchemy_fsm.transition import ClassBoundFsmTransition
 
 from oarepo_fsm.proxies import current_oarepo_fsm
 
 
-class FSMRecordAction(MethodView):
-    view_name = '{0}_state'
+class StatefulRecordActions(ContentNegotiatedMethodView):
+    """StatefulRecord actions view."""
+    view_name = '{0}_actions'
 
-    def __init__(self,
-                 fsm_record_schema=None,
-                 fsm_pid_type=None,
-                 **kwargs):
-        super().__init__(**kwargs)
-        self.fsm_pid_type = fsm_pid_type
-        self.fsm_record_schema = fsm_record_schema
+    def __init__(self, serializers, ctx, *args, **kwargs):
+        """Constructor."""
+        super().__init__(serializers, *args, **kwargs)
+        for key, value in ctx.items():
+            setattr(self, key, value)
 
     @pass_record
     def get(self, pid, record, **kwargs):

@@ -9,6 +9,8 @@ import inspect
 
 from jsonpatch import apply_patch
 
+from oarepo_fsm.errors import InvalidPermissionError
+
 
 class StatefulRecordMixin(object):
     """
@@ -39,15 +41,21 @@ class StatefulRecordMixin(object):
         return super().update(e, **f)
 
     @classmethod
-    def get_states(cls):
-        if not getattr(cls, '_states'):
+    def get_actions(cls):
+        if not getattr(cls, '_states', False):
             funcs = inspect.getmembers(cls, predicate=inspect.isfunction)
-            cls._states = [fn for fn in funcs if getattr(fn, '_fsm')]
-        else:
-            return cls._states
+            cls._states = [(fname, fn) for fname, fn in funcs if getattr(fn, '_fsm', False)]
+        return cls._states
 
-    def get_transitions(self):
-        pass
+    @classmethod
+    def transitions(cls):
+        return [getattr(s[1], '_fsm') for s in cls.get_actions()]
 
-    def get_user_transitions(self):
-        pass
+    @classmethod
+    def user_transitions(cls):
+        for t in cls.transitions():
+            try:
+                if t.check_permission(None):
+                    yield t
+            except InvalidPermissionError:
+                continue

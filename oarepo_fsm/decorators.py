@@ -13,19 +13,28 @@ from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError
 def has_permission(f):
     """Decorator to check the transition should be manually triggered."""
     def inner(self, record, **kwargs):
-        # if self.permission_factory and not self.permission_factory(record).can():
-        #     raise InvalidPermissionError(
-        #         permission=self.permission_factory(record)
-        #     )
+        if self.permission and not self.permission(record).can():
+            raise InvalidPermissionError(
+                permission=self.permission(record)
+            )
+        return f(self, record, **kwargs)
+    return inner
+
+
+def has_valid_state(f):
+    """Decorator to check the record is in a valid state for transition execution."""
+    def inner(self, record, **kwargs):
+        if record['state'] not in self.src:
+            raise InvalidSourceStateError(source=record['state'], target=self.dest)
         return f(self, record, **kwargs)
     return inner
 
 
 class Transition(object):
-    """A transition class."""
+    """A transition specification class."""
 
     def __init__(
-        self, src, dest, permission_factory=None, **kwargs
+        self, src, dest, permission=None, **kwargs
     ):
         """Init transition object."""
         self.src = src
@@ -36,19 +45,17 @@ class Transition(object):
         # default_perm = current_app.config[
         #     'OAREPO_FSM_DEFAULT_PERMISSION_FACTORY'
         # ]
-        # self.permission_factory = permission_factory or default_perm
+        self.permission = permission  # or default_perm
 
-    def validate_source_state(self, record):
-        """Ensure that source and destination states are valid."""
-        if record['state'] != self.src:
-            raise InvalidSourceStateError(source=self.src, target=self.dest)
-
+    @has_valid_state
     @has_permission
     def execute(self, record, **kwargs):
         """Execute transition when conditions are met."""
-        self.validate_source_state(record)
-
         record['state'] = self.dest
+
+    @has_permission
+    def check_permission(self, record):
+        return True
 
 
 def transition(obj: Transition):

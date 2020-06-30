@@ -12,24 +12,53 @@ from invenio_access import ActionRoles, superuser_access, authenticated_user
 from invenio_accounts.models import Role
 from invenio_app.factory import create_api
 from invenio_db import db
+from invenio_indexer.api import RecordIndexer
 from invenio_records_rest.utils import allow_all
+from invenio_search import RecordsSearch
 
 from examples.models import ExampleRecord
 from .helpers import test_views_permissions_factory, record_pid_minter
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def create_app():
     """Return API app."""
     return create_api
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def app_config(app_config):
     """Flask application fixture."""
-    app_config["JSONSCHEMAS_ENDPOINT"] = "/schema"
-    app_config["JSONSCHEMAS_HOST"] = "localhost:5000"
-    app_config["RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY"] = allow_all
+    app_config["JSONSCHEMAS_ENDPOINT"] = '/schema'
+    app_config["JSONSCHEMAS_HOST"] = 'localhost:5000'
+    app_config['RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY'] = allow_all
+    app_config['OAREPO_FSM_ENABLED_REST_ENDPOINTS'] = ['recid']
+    app_config['RECORDS_REST_ENDPOINTS'] = dict(
+        recid=dict(
+            pid_type='recid',
+            pid_minter='recid',
+            pid_fetcher='recid',
+            search_class=RecordsSearch,
+            indexer_class=RecordIndexer,
+            record_class=ExampleRecord,
+            search_index=None,
+            default_endpoint_prefix=True,
+            search_type=None,
+            record_serializers={
+                'application/json': ('invenio_records_rest.serializers'
+                                     ':json_v1_response'),
+            },
+            search_serializers={
+                'application/json': ('invenio_records_rest.serializers'
+                                     ':json_v1_search'),
+            },
+            list_route='/records/',
+            item_route='/records/<pid(recid):pid_value>',
+            default_media_type='application/json',
+            max_result_window=10000,
+            error_handlers=dict(),
+        ),
+    )
     return app_config
 
 
@@ -93,8 +122,8 @@ def users(db, base_app):
         datastore = base_app.extensions["security"].datastore
 
         # create users
-        manager = datastore.create_user(
-            email="manager@test.com", password="123456", active=True
+        editor = datastore.create_user(
+            email="editor@test.com", password="123456", active=True
         )
         admin = datastore.create_user(
             email="admin@test.com", password="123456", active=True
@@ -110,11 +139,11 @@ def users(db, base_app):
         )
         datastore.add_role_to_user(admin, admin_role)
         # Give role to user
-        manager_role = Role(name="manager")
+        editor_role = Role(name="editor")
         db.session.add(
-            ActionRoles(action=authenticated_user.value, role=manager_role)
+            ActionRoles(action=authenticated_user.value, role=editor_role)
         )
-        datastore.add_role_to_user(manager, manager_role)
+        datastore.add_role_to_user(editor, editor_role)
     db.session.commit()
 
-    return {"admin": admin, "manager": manager, "user": user}
+    return {"admin": admin, "editor": editor, "user": user}

@@ -8,22 +8,9 @@
 from urllib.parse import urlsplit, urlunparse
 
 from flask import current_app
-from invenio_indexer.utils import schema_to_index
 from invenio_jsonschemas import current_jsonschemas
 from invenio_records_rest.utils import obj_or_import_string
 from jsonref import JsonRef
-
-
-def get_search_index(json_schemas, url_prefix):
-    """Return search indices from json schemas"""
-    indices = [schema_to_index(x)[0] for x in json_schemas]
-    indices = [x for x in indices if x]
-    if len(indices) == 1:
-        return indices[0]
-    else:
-        raise Exception(
-            'Add "fsm_search_index" or "json_schemas" to '
-            'OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS["%s"]' % url_prefix)
 
 
 def internal_invenio_loader(relative_schema, *args, **kwargs):

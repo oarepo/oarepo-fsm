@@ -16,8 +16,7 @@ history = open('CHANGES.rst').read()
 OAREPO_VERSION = os.environ.get('OAREPO_VERSION', '3.2.0')
 
 install_requires = [
-    'wrapt>=1.11.2',
-    'sqlalchemy_fsm>=2.0.8'
+    'wrapt>=1.11.2'
 ]
 
 deploy_requires = [

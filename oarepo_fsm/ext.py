@@ -14,10 +14,12 @@ from invenio_base.signals import app_loaded
 from invenio_indexer.signals import before_record_index
 from invenio_records import Record
 from invenio_records.signals import after_record_insert
+from invenio_records_rest import current_records_rest
 
 from . import config
+from .mixins import StatefulRecordMixin
 from .utils import convert_relative_schema_to_absolute, pid_getter
-from .views import FSMRecordAction
+from .views import FSMRecordAction, StatefulRecordActions
 
 
 class _OARepoFSMState(object):
@@ -64,24 +66,43 @@ class _OARepoFSMState(object):
         return
 
     def _register_blueprints(self, app):
-        endpoint_configs = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})
+        enabled_endpoints = app.config.get('OAREPO_FSM_ENABLED_REST_ENDPOINTS', [])
+        rest_prefixes = current_records_rest.default_endpoint_prefixes
+        rest_config = app.config.get('RECORDS_REST_ENDPOINTS', {})
 
         fsm_blueprint = Blueprint(
             'oarepo_fsm',
             __name__,
-            url_prefix='/'
+            url_prefix=''
         )
 
-        for prefix, config in endpoint_configs.items():
-            record_list_url = url_for(
-                'invenio_records_rest.{0}_list'.format(prefix),
-                _external=False)
-            fsm_blueprint.add_url_rule(
-                rule=f'{record_list_url}{pid_getter(config)}/fsm',
-                view_func=FSMRecordAction.as_view(
-                    FSMRecordAction.view_name.format(prefix),
-                    fsm_pid_type=config['pid_type'],
-                ))
+        for e in enabled_endpoints:
+            econf = rest_config.get(e)
+            record_class = None
+            try:
+                record_class: StatefulRecordMixin = econf['record_class']
+            except KeyError:
+                raise AttributeError('record_class must be set on RECORDS_REST_ENDPOINTS({})'.format(e))
+
+            if not issubclass(record_class, StatefulRecordMixin):
+                raise ValueError('{} must be a subclass of oarepo_fsm.mixins.StatefulRecordMixin'.format(record_class))
+
+            distinct_actions = record_class.get_actions()
+            print(list(distinct_actions))
+            url = "{0}/<any({1}):action>".format(
+                econf["item_route"], ",".join([name for name, fn in distinct_actions])
+            )
+
+            record_actions = StatefulRecordActions.as_view(
+                StatefulRecordActions.view_name.format(e),
+                **dict(
+                    serializers=econf['serializers'],
+                    default_media_type=econf['default_media_type'],
+                    ctx={}
+                )
+            )
+
+            fsm_blueprint.add_url_rule(url, view_func=record_actions, methods=["POST"])
 
         app.register_blueprint(fsm_blueprint)
 
