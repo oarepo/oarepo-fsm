@@ -8,19 +8,37 @@
 """OArepo FSM library for record state transitions"""
 from __future__ import absolute_import, print_function
 
-from flask import jsonify
-from invenio_records_rest.views import need_record_permission, pass_record
+from flask import jsonify, url_for, current_app
+from invenio_records_rest import current_records_rest
+from invenio_records_rest.views import pass_record
 from invenio_rest import ContentNegotiatedMethodView
-from sqlalchemy.inspection import inspect
-from sqlalchemy_fsm import FSMField
-from sqlalchemy_fsm.transition import ClassBoundFsmTransition
 
-from oarepo_fsm.proxies import current_oarepo_fsm
+from oarepo_fsm.errors import RecordNotStatefulError
+from oarepo_fsm.mixins import StatefulRecordMixin
+
+
+def build_url_action_for_pid(pid, action):
+    """Build urls for Loan actions."""
+    return url_for(
+        "oarepo_fsm.{0}_actions".format(pid.pid_type),
+        pid_value=pid.pid_value,
+        action=action,
+        _external=True,
+    )
+
+
+def record_class_from_pid_type(pid_type):
+    """Returns a Record class from a given pid_type."""
+    try:
+        prefix = current_records_rest.default_endpoint_prefixes[pid_type]
+        return current_app.config.get('RECORDS_REST_ENDPOINTS', {})[prefix]['record_class']
+    except KeyError:
+        return None
 
 
 class StatefulRecordActions(ContentNegotiatedMethodView):
     """StatefulRecord actions view."""
-    view_name = '{0}_actions'
+    view_name = '{0}_{1}'
 
     def __init__(self, serializers, ctx, *args, **kwargs):
         """Constructor."""
@@ -30,42 +48,27 @@ class StatefulRecordActions(ContentNegotiatedMethodView):
 
     @pass_record
     def get(self, pid, record, **kwargs):
-        """Get Record FSM data."""
-        recfsm = current_oarepo_fsm.get_fsm_record(record)
-        if not recfsm:
-            response = jsonify({})
-            response.status_code = 404
-            return response
+        """Get Record FSM state response."""
+        record_cls = record_class_from_pid_type(pid.pid_type)
+        if not issubclass(record_cls, StatefulRecordMixin):
+            raise RecordNotStatefulError(record_cls)
 
-        result = {
-            'transitions': []
-        }
+        actions = {}
+        for act, _ in record_cls.user_transitions():
+            actions[act] = build_url_action_for_pid(pid, act)
 
-        for col in inspect(recfsm.__class__).columns:
-            if isinstance(col.type, FSMField):
-                result['state'] = getattr(recfsm, col.name)
-                break
-
-        for prop in dir(recfsm.__class__):
-            fsm_field = getattr(recfsm.__class__, prop)
-            if isinstance(fsm_field, ClassBoundFsmTransition):
-                if recfsm.close.can_proceed():
-                    result['transitions'].append(fsm_field)
-
-            # if issubclass(fsm_field, FSMRecordModel):
-            #         for meth in dir(fsm_field):
-            #             if meth.startswith('_'):
-            #                 continue
-            #
-            #             method = getattr(fsm_field, meth)
-            #             if isinstance(method, InstanceBoundFsmTransition):
-            #                 if method.can_proceed():
-            #                     result['transitions'].append(meth)
+        result = dict(
+            metadata=dict(
+                state=record['state'],
+            ),
+            links=dict(
+                actions=actions
+            )
+        )
 
         return jsonify(result)
 
     @pass_record
-    @need_record_permission('transition_permission_factory')
     def post(self, pid, record, **kwargs):
         """Change Record state using FSM transition."""
         # current_search_client.indices.refresh()

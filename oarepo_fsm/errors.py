@@ -7,6 +7,7 @@
 """OArepo FSM library for record state transitions"""
 import json
 
+from flask_login import current_user
 from invenio_rest.errors import RESTException
 
 
@@ -49,6 +50,17 @@ class InvalidSourceStateError(FSMException):
         super().__init__(**kwargs)
 
 
+class RecordNotStatefulError(FSMException):
+    """Raised when record does not inherit StatefulRecordMixin."""
+
+    def __init__(self, record_cls=None, **kwargs):
+        """Initialize exception."""
+        self.description = (
+            "{} must be a subclass of oarepo_fsm.mixins.StatefulRecordMixin".format(record_cls)
+        )
+        super().__init__(**kwargs)
+
+
 class InvalidPermissionError(FSMException):
     """Raised when permissions are not satisfied for transition."""
 
@@ -58,6 +70,6 @@ class InvalidPermissionError(FSMException):
         """Initialize exception."""
         self.description = (
             "This action is not permitted "
-            "for your role '{}'".format(permission)
+            "for your user {}. Required: '{}'".format(current_user, permission)
         )
         super().__init__(**kwargs)

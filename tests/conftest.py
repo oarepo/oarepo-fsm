@@ -1,13 +1,11 @@
-
 """Pytest configuration."""
 
 from __future__ import absolute_import, print_function
 
-import json
 import uuid
-from os.path import dirname, join
 
 import pytest
+from flask import Blueprint
 from invenio_access import ActionRoles, superuser_access, authenticated_user
 from invenio_accounts.models import Role
 from invenio_app.factory import create_api
@@ -29,8 +27,9 @@ def create_app():
 @pytest.fixture(scope='module')
 def app_config(app_config):
     """Flask application fixture."""
-    app_config["JSONSCHEMAS_ENDPOINT"] = '/schema'
-    app_config["JSONSCHEMAS_HOST"] = 'localhost:5000'
+    app_config['JSONSCHEMAS_ENDPOINT'] = '/schema'
+    app_config['JSONSCHEMAS_HOST'] = 'localhost:5000'
+    app_config['PIDSTORE_RECID_FIELD'] = 'pid'
     app_config['RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY'] = allow_all
     app_config['OAREPO_FSM_ENABLED_REST_ENDPOINTS'] = ['recid']
     app_config['RECORDS_REST_ENDPOINTS'] = dict(
@@ -71,7 +70,7 @@ def record(app):
         'state': 'closed'
     }
 
-    record_pid_minter(record_uuid, data=new_record)
+    pid = record_pid_minter(record_uuid, data=new_record)
     record = ExampleRecord.create(data=new_record, id_=record_uuid)
     db.session.commit()
     yield record
@@ -147,3 +146,12 @@ def users(db, base_app):
     db.session.commit()
 
     return {"admin": admin, "editor": editor, "user": user}
+
+
+@pytest.fixture()
+def test_blueprint():
+    return Blueprint(
+        '_tests',
+        __name__,
+        url_prefix='/_tests/'
+    )

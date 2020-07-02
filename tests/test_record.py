@@ -34,22 +34,22 @@ def test_record_states(record: ExampleRecord):
 
 def test_record_transitions(record: ExampleRecord):
     assert len(record.transitions()) == 4
-    for t in record.transitions():
-        assert isinstance(t, Transition)
+    for act, trans in record.transitions():
+        assert isinstance(trans, Transition)
 
 
 def test_record_user_transitions(record: ExampleRecord, users):
     login_user(users['user'])
     ut = list(record.user_transitions())
     assert len(ut) == 2
-    assert [u.dest for u in ut] == ['closed', 'open']
+    assert [u[1].dest for u in ut] == ['closed', 'open']
 
     login_user(users['editor'])
     ut = list(record.user_transitions())
     assert len(ut) == 3
-    assert [u.dest for u in ut] == ['closed', 'open', 'published']
+    assert [u[1].dest for u in ut] == ['closed', 'open', 'published']
 
     login_user(users['admin'])
     ut = list(record.user_transitions())
     assert len(ut) == 4
-    assert [u.dest for u in ut] == ['archived', 'closed', 'open', 'published']
+    assert [u[1].dest for u in ut] == ['archived', 'closed', 'open', 'published']

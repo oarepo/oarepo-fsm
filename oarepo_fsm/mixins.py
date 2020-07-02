@@ -44,18 +44,18 @@ class StatefulRecordMixin(object):
     def get_actions(cls):
         if not getattr(cls, '_states', False):
             funcs = inspect.getmembers(cls, predicate=inspect.isfunction)
-            cls._states = [(fname, fn) for fname, fn in funcs if getattr(fn, '_fsm', False)]
+            cls._states = [(act, fn) for act, fn in funcs if getattr(fn, '_fsm', False)]
         return cls._states
 
     @classmethod
     def transitions(cls):
-        return [getattr(s[1], '_fsm') for s in cls.get_actions()]
+        return [(act, getattr(fn, '_fsm')) for act, fn in cls.get_actions()]
 
     @classmethod
     def user_transitions(cls):
-        for t in cls.transitions():
+        for act, trans in cls.transitions():
             try:
-                if t.check_permission(None):
-                    yield t
+                if trans.check_permission(None):
+                    yield act, trans
             except InvalidPermissionError:
                 continue

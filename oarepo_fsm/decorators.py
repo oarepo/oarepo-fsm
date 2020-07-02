@@ -5,28 +5,31 @@
 # the terms of the MIT License; see LICENSE file for more details.
 
 """OArepo FSM library for record state transitions"""
-from flask import current_app
 
 from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError
 
 
 def has_permission(f):
     """Decorator to check the transition should be manually triggered."""
+
     def inner(self, record, **kwargs):
         if self.permission and not self.permission(record).can():
             raise InvalidPermissionError(
                 permission=self.permission(record)
             )
         return f(self, record, **kwargs)
+
     return inner
 
 
 def has_valid_state(f):
     """Decorator to check the record is in a valid state for transition execution."""
+
     def inner(self, record, **kwargs):
         if record['state'] not in self.src:
             raise InvalidSourceStateError(source=record['state'], target=self.dest)
         return f(self, record, **kwargs)
+
     return inner
 
 
@@ -63,6 +66,8 @@ def transition(obj: Transition):
         def wrapper(self, *args, **kwargs):
             obj.execute(record=self, **kwargs)
             f(self, *args, **kwargs)
+
         wrapper._fsm = obj
         return wrapper
+
     return inner

@@ -9,17 +9,12 @@
 
 from __future__ import absolute_import, print_function
 
-from flask import Blueprint, url_for
+from flask import Blueprint
 from invenio_base.signals import app_loaded
-from invenio_indexer.signals import before_record_index
-from invenio_records import Record
-from invenio_records.signals import after_record_insert
-from invenio_records_rest import current_records_rest
 
 from . import config
 from .mixins import StatefulRecordMixin
-from .utils import convert_relative_schema_to_absolute, pid_getter
-from .views import FSMRecordAction, StatefulRecordActions
+from .views import StatefulRecordActions
 
 
 class _OARepoFSMState(object):
@@ -35,29 +30,6 @@ class _OARepoFSMState(object):
             self._register_blueprints(app)
             self._connect_model_callbacks(app)
             self._connect_index_callbacks(app)
-            self._prepare_schema_map(app)
-
-    def get_initial_state(self, record: Record):
-        config = self.schema_map.get(record['$schema'], None)
-        return config.get('initial_state', 'initial')
-
-    def get_record_fsm_prefix(self, record):
-        schema = record.get('$schema', None)
-        if not schema:
-            return None
-
-        schema = convert_relative_schema_to_absolute(schema)
-        config = self.schema_map.get(schema, None)
-        if not config:
-            return None
-        return config['prefix']
-
-    def _prepare_schema_map(self, app):
-        config = app.config.get('OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS', {})
-        for prefix, item in config.items():
-            schemas = item.get('json_schemas', [])
-            for sch in schemas:
-                self.schema_map[convert_relative_schema_to_absolute(sch)] = {'prefix': prefix, **item}
 
     def _connect_model_callbacks(self, app):
         return
@@ -67,7 +39,6 @@ class _OARepoFSMState(object):
 
     def _register_blueprints(self, app):
         enabled_endpoints = app.config.get('OAREPO_FSM_ENABLED_REST_ENDPOINTS', [])
-        rest_prefixes = current_records_rest.default_endpoint_prefixes
         rest_config = app.config.get('RECORDS_REST_ENDPOINTS', {})
 
         fsm_blueprint = Blueprint(
@@ -87,22 +58,33 @@ class _OARepoFSMState(object):
             if not issubclass(record_class, StatefulRecordMixin):
                 raise ValueError('{} must be a subclass of oarepo_fsm.mixins.StatefulRecordMixin'.format(record_class))
 
+            fsm_url = "{0}/fsm".format(econf["item_route"])
+            fsm_view_name = StatefulRecordActions.view_name.format(e, 'fsm')
+
             distinct_actions = record_class.get_actions()
-            print(list(distinct_actions))
-            url = "{0}/<any({1}):action>".format(
-                econf["item_route"], ",".join([name for name, fn in distinct_actions])
+            actions_view_name = StatefulRecordActions.view_name.format(e, 'actions')
+            actions_url = "{0}/<any({1}):action>".format(
+                fsm_url, ",".join([name for name, fn in distinct_actions])
+            )
+
+            view_options = dict(
+                serializers=econf['record_serializers'],
+                default_media_type=econf['default_media_type'],
+                ctx={}
+            )
+
+            record_fsm = StatefulRecordActions.as_view(
+                fsm_view_name,
+                **view_options
             )
 
             record_actions = StatefulRecordActions.as_view(
-                StatefulRecordActions.view_name.format(e),
-                **dict(
-                    serializers=econf['serializers'],
-                    default_media_type=econf['default_media_type'],
-                    ctx={}
-                )
+                actions_view_name,
+                **view_options
             )
 
-            fsm_blueprint.add_url_rule(url, view_func=record_actions, methods=["POST"])
+            fsm_blueprint.add_url_rule(fsm_url, view_func=record_fsm, methods=["GET"])
+            fsm_blueprint.add_url_rule(actions_url, view_func=record_actions, methods=["POST"])
 
         app.register_blueprint(fsm_blueprint)
 

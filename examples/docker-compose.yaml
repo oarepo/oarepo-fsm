@@ -7,4 +7,10 @@ services:
       - node.name=es01
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
-      - 9200:9200
+      - "127.0.0.1:9200:9200"
+  oarepo-fsm-test-cache:
+    image: redis
+    restart: "always"
+    read_only: true
+    ports:
+      - "127.0.0.1:6379:6379"
