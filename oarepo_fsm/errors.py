@@ -39,13 +39,26 @@ class FSMException(RESTException):
         return json.dumps(body)
 
 
+class ActionNotAvailableError(FSMException):
+    """Raised when the requested action is not available to current user."""
+
+    code = 404
+
+    def __init__(self, action=None, **kwargs):
+        """Initialize exception."""
+        self.description = (
+            "Action {} is not available on this record".format(action)
+        )
+        super().__init__(**kwargs)
+
+
 class InvalidSourceStateError(FSMException):
     """Raised when source state of the record is invalid for transition."""
 
     def __init__(self, source=None, target=None, **kwargs):
         """Initialize exception."""
         self.description = (
-            "Transition from {} to {} is not allowed ".format(source, target)
+            "Transition from {} to {} is not allowed".format(source, target)
         )
         super().__init__(**kwargs)
 

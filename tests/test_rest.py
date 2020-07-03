@@ -9,7 +9,6 @@
 import json
 
 from flask import url_for
-from flask_security import login_user
 from invenio_pidstore.fetchers import recid_fetcher_v2
 
 from oarepo_fsm.views import build_url_action_for_pid
@@ -25,7 +24,7 @@ def test_record_rest_endpoints(app, json_headers):
     assert 'oarepo_fsm.recid_actions' in url_endpoints
 
 
-def test_fsm_rest(app, json_headers, record, users, test_blueprint):
+def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
     """TEST FSM REST API logged in as certain users."""
     recpid = recid_fetcher_v2(record.id, record)
 
@@ -60,9 +59,6 @@ def test_fsm_rest(app, json_headers, record, users, test_blueprint):
                   pid_value=recid_fetcher_v2(record.id, record).pid_value)
 
     for user, expected_links in test_cases:
-
-        test_blueprint.add_url_rule('_login_{}'.format(user.id), view_func=_test_login_factory(user))
-        app.register_blueprint(test_blueprint)
         with app.test_client() as client:
             client.get(url_for('_tests.test_login_{}'.format(user.id)))
             res = client.get(url, headers=json_headers)
@@ -73,9 +69,63 @@ def test_fsm_rest(app, json_headers, record, users, test_blueprint):
         assert res_dict['links'] == expected_links
 
 
-def _test_login_factory(user):
-    def test_login():
-        login_user(user, remember=True)
-        return 'OK'
-    test_login.__name__ = '{}_{}'.format(test_login.__name__, user.id)
-    return test_login
+def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
+    """TEST FSM REST API logged in as certain users."""
+    test_cases = [
+        (users['user'],
+         ['open', 'close', 'publish'],
+         [
+             (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
+             (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
+             (404, {'message': 'Action publish is not available on this record'})
+         ]),
+        (users['editor'],
+         ['open', 'close', 'publish'],
+         [
+             (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
+             (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
+             (400, {'message': 'Transition from closed to published is not allowed'})
+         ]),
+        (users['admin'],
+         ['open', 'close', 'archive', 'publish'],
+         [
+             (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
+             (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
+             (202, {'metadata': {'pid': '2', 'state': 'archived', 'title': 'example'}}),
+             (202, {'metadata': {'pid': '2', 'state': 'published', 'title': 'example'}})
+         ])
+    ]
+
+    for user, actions, expected_results in test_cases:
+        with app.test_client() as client:
+            client.get(url_for('_tests.test_login_{}'.format(user.id)))
+            for idx, action in enumerate(actions):
+                expected_status, expected_body = expected_results[idx]
+
+                url = url_for('oarepo_fsm.recid_actions',
+                              action=action,
+                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
+
+                res = client.post(url, headers=json_headers)
+                res_dict = json.loads(res.data.decode('utf-8'))
+                assert res.status_code == expected_status
+                for k, v in expected_body.items():
+                    assert res_dict[k] == v
+
+
+def test_rest_state_change_prevented(app, record, users, json_patch_headers, test_blueprint):
+    url = url_for('invenio_records_rest.recid_item',
+                  pid_value=recid_fetcher_v2(record.id, record).pid_value)
+
+    orig_state = record['state']
+
+    with app.test_client() as client:
+        client.get(url_for('_tests.test_login_{}'.format(users['admin'].id)))
+        res = client.patch(
+            url,
+            json=[{"op": "replace", "path": "/state", "value": "boo"}],
+            headers=json_patch_headers)
+
+        res_dict = json.loads(res.data.decode('utf-8'))
+        print(res_dict)
+        assert res.status_code == 403

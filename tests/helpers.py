@@ -9,6 +9,7 @@
 import copy
 import uuid
 
+from flask_security import login_user
 from invenio_db import db
 from invenio_pidstore.providers.recordid import RecordIdProvider
 from invenio_records_rest.utils import allow_all
@@ -40,3 +41,12 @@ def create_record(data):
 def test_views_permissions_factory(action):
     """Test permissions factory."""
     return allow_all()
+
+
+def _test_login_factory(user):
+    def test_login():
+        login_user(user, remember=True)
+        return 'OK'
+
+    test_login.__name__ = '{}_{}'.format(test_login.__name__, user.id)
+    return test_login

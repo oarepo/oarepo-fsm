@@ -8,13 +8,29 @@
 """OArepo FSM library for record state transitions"""
 from __future__ import absolute_import, print_function
 
+from functools import wraps
+
 from flask import jsonify, url_for, current_app
+from invenio_db import db
 from invenio_records_rest import current_records_rest
 from invenio_records_rest.views import pass_record
 from invenio_rest import ContentNegotiatedMethodView
 
-from oarepo_fsm.errors import RecordNotStatefulError
+from oarepo_fsm.errors import RecordNotStatefulError, ActionNotAvailableError
 from oarepo_fsm.mixins import StatefulRecordMixin
+
+
+def validate_record_class(f):
+    """Checks if record inherits from the StatefulRecordMixin and
+       adds a current record instance class to the wrapped function.
+    """
+    @wraps(f)
+    def inner(self, pid, record, *args, **kwargs):
+        record_cls = record_class_from_pid_type(pid.pid_type)
+        if not issubclass(record_cls, StatefulRecordMixin):
+            raise RecordNotStatefulError(record_cls)
+        return f(self, pid=pid, record=record, record_cls=record_cls, *args, **kwargs)
+    return inner
 
 
 def build_url_action_for_pid(pid, action):
@@ -47,14 +63,11 @@ class StatefulRecordActions(ContentNegotiatedMethodView):
             setattr(self, key, value)
 
     @pass_record
-    def get(self, pid, record, **kwargs):
+    @validate_record_class
+    def get(self, pid, record, record_cls, **kwargs):
         """Get Record FSM state response."""
-        record_cls = record_class_from_pid_type(pid.pid_type)
-        if not issubclass(record_cls, StatefulRecordMixin):
-            raise RecordNotStatefulError(record_cls)
-
         actions = {}
-        for act, _ in record_cls.user_transitions():
+        for act, _ in record_cls.user_actions().items():
             actions[act] = build_url_action_for_pid(pid, act)
 
         result = dict(
@@ -69,9 +82,20 @@ class StatefulRecordActions(ContentNegotiatedMethodView):
         return jsonify(result)
 
     @pass_record
-    def post(self, pid, record, **kwargs):
-        """Change Record state using FSM transition."""
-        # current_search_client.indices.refresh()
-        # current_search_client.indices.flush()
-        # endpoint = 'invenio_records_rest.{0}_item'.format(self.published_endpoint_name)
-        # return redirect(url_for(endpoint, pid_value=pid.pid_value, _external=True), code=302)
+    @validate_record_class
+    def post(self, pid, record, record_cls, action, **kwargs):
+        """Change Record state using FSM action."""
+        record = record_cls.get_record(record.id)
+        ua = record.user_actions().get(action, None)
+        if not ua:
+            raise ActionNotAvailableError(action)
+
+        # Invoke requested action for the current record
+        ua(record)
+        record.commit()
+        db.session.commit()
+        return self.make_response(
+            pid,
+            record,
+            202
+        )

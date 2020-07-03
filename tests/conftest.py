@@ -15,7 +15,7 @@ from invenio_records_rest.utils import allow_all
 from invenio_search import RecordsSearch
 
 from examples.models import ExampleRecord
-from .helpers import test_views_permissions_factory, record_pid_minter
+from .helpers import test_views_permissions_factory, record_pid_minter, _test_login_factory
 
 
 @pytest.fixture(scope='module')
@@ -54,6 +54,10 @@ def app_config(app_config):
             list_route='/records/',
             item_route='/records/<pid(recid):pid_value>',
             default_media_type='application/json',
+            create_permission_factory_imp=allow_all,
+            delete_permission_factory_imp=allow_all,
+            update_permission_factory_imp=allow_all,
+            read_permission_factory_imp=allow_all,
             max_result_window=10000,
             error_handlers=dict(),
         ),
@@ -82,6 +86,15 @@ def json_headers(app):
     return [
         ("Content-Type", "application/json"),
         ("Accept", "application/json"),
+    ]
+
+
+@pytest.fixture()
+def json_patch_headers(app):
+    """JSON Patch headers."""
+    return [
+        ('Content-Type', 'application/json-patch+json'),
+        ('Accept', 'application/json'),
     ]
 
 
@@ -149,9 +162,21 @@ def users(db, base_app):
 
 
 @pytest.fixture()
-def test_blueprint():
-    return Blueprint(
+def test_blueprint(users, app):
+    blue = Blueprint(
         '_tests',
         __name__,
         url_prefix='/_tests/'
     )
+
+    if blue.name in app.blueprints:
+        del app.blueprints[blue.name]
+
+    for _, user in users.items():
+        if app.view_functions.get('_tests.test_login_{}'.format(user.id)) is not None:
+            del app.view_functions['_tests.test_login_{}'.format(user.id)]
+
+        blue.add_url_rule('_login_{}'.format(user.id), view_func=_test_login_factory(user))
+
+    app.register_blueprint(blue)
+    return blue

@@ -14,7 +14,7 @@ def admin_permission(record):
     return Permission(RoleNeed('admin'))
 
 
-class ExampleRecord(Record, StatefulRecordMixin):
+class ExampleRecord(StatefulRecordMixin, Record):
 
     @transition(Transition(src=['closed'], dest='open'))
     def open(self):

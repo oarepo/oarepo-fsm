@@ -11,6 +11,7 @@ from __future__ import absolute_import, print_function
 
 from flask import Blueprint
 from invenio_base.signals import app_loaded
+from invenio_records_rest.utils import obj_or_import_string
 
 from . import config
 from .mixins import StatefulRecordMixin
@@ -61,14 +62,18 @@ class _OARepoFSMState(object):
             fsm_url = "{0}/fsm".format(econf["item_route"])
             fsm_view_name = StatefulRecordActions.view_name.format(e, 'fsm')
 
-            distinct_actions = record_class.get_actions()
+            distinct_actions = record_class.actions()
             actions_view_name = StatefulRecordActions.view_name.format(e, 'actions')
             actions_url = "{0}/<any({1}):action>".format(
-                fsm_url, ",".join([name for name, fn in distinct_actions])
+                fsm_url, ",".join([name for name, fn in distinct_actions.items()])
             )
 
+            serializers = {}
+            for k, v in econf['record_serializers'].items():
+                serializers[k] = obj_or_import_string(v)
+
             view_options = dict(
-                serializers=econf['record_serializers'],
+                serializers=serializers,
                 default_media_type=econf['default_media_type'],
                 ctx={}
             )

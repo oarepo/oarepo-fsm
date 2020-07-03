@@ -28,28 +28,29 @@ def test_record_transition(record: ExampleRecord):
 
 
 def test_record_states(record: ExampleRecord):
-    assert len(record.get_actions()) == 4
-    assert 'publish' in [s[0] for s in record.get_actions()]
+    assert len(record.actions().items()) == 4
+    assert 'publish' in record.actions().keys()
 
 
 def test_record_transitions(record: ExampleRecord):
     assert len(record.transitions()) == 4
-    for act, trans in record.transitions():
+    for trans in record.transitions().values():
         assert isinstance(trans, Transition)
 
 
 def test_record_user_transitions(record: ExampleRecord, users):
     login_user(users['user'])
-    ut = list(record.user_transitions())
-    assert len(ut) == 2
-    assert [u[1].dest for u in ut] == ['closed', 'open']
+    ut = record.user_actions()
+    assert len(ut.items()) == 2
+    assert 'close' in ut.keys()
+    assert 'open' in ut.keys()
 
     login_user(users['editor'])
-    ut = list(record.user_transitions())
-    assert len(ut) == 3
-    assert [u[1].dest for u in ut] == ['closed', 'open', 'published']
+    ut = record.user_actions()
+    assert len(ut.items()) == 3
+    assert list(ut.keys()) == ['close', 'open', 'publish']
 
     login_user(users['admin'])
-    ut = list(record.user_transitions())
-    assert len(ut) == 4
-    assert [u[1].dest for u in ut] == ['archived', 'closed', 'open', 'published']
+    ut = record.user_actions()
+    assert len(ut.items()) == 4
+    assert list(ut.keys()) == ['archive', 'close', 'open', 'publish']
