@@ -1,8 +1,21 @@
 {
-  "StatefulRecord": {
-    "type": "nested",
+  "mappings": {
+    "date_detection": false,
+    "numeric_detection": false,
     "properties": {
-      "b": {
+      "_created": {
+        "type": "date"
+      },
+      "_updated": {
+        "type": "date"
+      },
+      "$schema": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text"
+      },
+      "state": {
         "type": "keyword"
       }
     }

@@ -13,11 +13,10 @@ from setuptools import find_packages, setup
 
 readme = open('README.rst').read()
 history = open('CHANGES.rst').read()
-OAREPO_VERSION = os.environ.get('OAREPO_VERSION', '3.1.1')
+OAREPO_VERSION = os.environ.get('OAREPO_VERSION', '3.2.0')
 
 install_requires = [
-    'wrapt>=1.11.2',
-    'sqlalchemy_fsm>=2.0.8'
+    'wrapt>=1.11.2'
 ]
 
 deploy_requires = [
@@ -72,18 +71,7 @@ setup(
         ],
         'invenio_base.api_apps': [
             'oarepo_fsm = oarepo_fsm.ext:OARepoFSM',
-        ],
-        # TODO: Edit these entry points to fit your needs.
-        # 'invenio_access.actions': [],
-        # 'invenio_admin.actions': [],
-        # 'invenio_assets.bundles': [],
-        # 'invenio_base.api_apps': [],
-        # 'invenio_base.api_blueprints': [],
-        # 'invenio_base.blueprints': [],
-        # 'invenio_celery.tasks': [],
-        # 'invenio_db.models': [],
-        # 'invenio_pidstore.minters': [],
-        # 'invenio_records.jsonresolver': [],
+        ]
     },
     extras_require=extras_require,
     install_requires=install_requires,

@@ -1,284 +1,191 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 CESNET.
 #
 # oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
-"""Pytest configuration.
-
-See https://pytest-invenio.readthedocs.io/ for documentation on which test
-fixtures are available.
-"""
+"""OArepo FSM library for record state transitions test module."""
 
 from __future__ import absolute_import, print_function
 
-import os
-import shutil
-import sys
 import uuid
-from collections import namedtuple
-from os.path import dirname, abspath
 
 import pytest
-from flask import Flask, make_response
-from flask_login import LoginManager, login_user
-from flask_principal import Principal
-from invenio_accounts.models import User, Role
-from invenio_base.signals import app_loaded
-from invenio_db import db as _db, InvenioDB
-from invenio_indexer import InvenioIndexer
+from examples.models import ExampleRecord
+from flask import Blueprint
+from invenio_access import ActionRoles, authenticated_user, superuser_access
+from invenio_accounts.models import Role
+from invenio_app.factory import create_api
+from invenio_db import db
 from invenio_indexer.api import RecordIndexer
-from invenio_jsonschemas import InvenioJSONSchemas, current_jsonschemas
-from invenio_pidstore import InvenioPIDStore
-from invenio_pidstore.minters import recid_minter
-from invenio_records import InvenioRecords, Record
-from invenio_records_rest import InvenioRecordsREST
-from invenio_records_rest.utils import allow_all, PIDConverter
-from invenio_records_rest.views import create_blueprint_from_app
-from invenio_rest import InvenioREST
-from invenio_search import current_search_client, InvenioSearch, current_search, RecordsSearch
-from invenio_search.cli import destroy, init
-from invenio_search.utils import build_index_name
-from sqlalchemy_utils import database_exists, create_database
-from oarepo_fsm import OARepoFSM
-from oarepo_fsm.links import fsm_links_factory
-from tests.helpers import set_identity
+from invenio_records_rest.utils import allow_all
+from invenio_search import RecordsSearch
 
-
-@pytest.yield_fixture()
-def client(app):
-    """Get test client."""
-    with app.test_client() as client:
-        yield client
+from .helpers import _test_login_factory, record_pid_minter, \
+    test_views_permissions_factory
 
 
 @pytest.fixture(scope='module')
-def celery_config():
-    """Override pytest-invenio fixture.
+def create_app():
+    """Return API app."""
+    return create_api
 
-    TODO: Remove this fixture if you add Celery support.
-    """
-    return {}
+
+@pytest.fixture(scope='module')
+def app_config(app_config):
+    """Flask application fixture."""
+    app_config['JSONSCHEMAS_ENDPOINT'] = '/schema'
+    app_config['JSONSCHEMAS_HOST'] = 'localhost:5000'
+    app_config['PIDSTORE_RECID_FIELD'] = 'pid'
+    app_config['RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY'] = allow_all
+    app_config['OAREPO_FSM_ENABLED_REST_ENDPOINTS'] = ['recid']
+    app_config['RECORDS_REST_ENDPOINTS'] = dict(
+        recid=dict(
+            pid_type='recid',
+            pid_minter='recid',
+            pid_fetcher='recid',
+            search_class=RecordsSearch,
+            indexer_class=RecordIndexer,
+            record_class=ExampleRecord,
+            search_index=None,
+            default_endpoint_prefix=True,
+            search_type=None,
+            record_serializers={
+                'application/json': ('invenio_records_rest.serializers'
+                                     ':json_v1_response'),
+            },
+            search_serializers={
+                'application/json': ('invenio_records_rest.serializers'
+                                     ':json_v1_search'),
+            },
+            list_route='/records/',
+            item_route='/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>',
+            default_media_type='application/json',
+            create_permission_factory_imp=allow_all,
+            delete_permission_factory_imp=allow_all,
+            update_permission_factory_imp=allow_all,
+            read_permission_factory_imp=allow_all,
+            max_result_window=10000,
+            error_handlers=dict(),
+        ),
+    )
+    return app_config
 
 
 @pytest.fixture()
-def base_app():
-    """Base Flask application fixture."""
-    instance_path = os.path.join(sys.prefix, 'var', 'test-instance')
+def record(app):
+    """Minimal Record object."""
+    record_uuid = uuid.uuid4()
+    new_record = {
+        'title': 'example',
+        'state': 'closed'
+    }
 
-    # empty the instance path
-    if os.path.exists(instance_path):
-        shutil.rmtree(instance_path)
-    os.makedirs(instance_path)
+    pid = record_pid_minter(record_uuid, data=new_record)
+    record = ExampleRecord.create(data=new_record, id_=record_uuid)
 
-    os.environ['INVENIO_INSTANCE_PATH'] = instance_path
+    db.session.commit()
+    yield record
 
-    app_ = Flask('examples-testapp', instance_path=instance_path)
-    app_.config.update(
-        TESTING=True,
-        JSON_AS_ASCII=True,
-        SQLALCHEMY_TRACK_MODIFICATIONS=True,
-        SQLALCHEMY_DATABASE_URI=os.environ.get(
-            'SQLALCHEMY_DATABASE_URI',
-            'sqlite:///:memory:'),
-        SERVER_NAME='localhost:5000',
-        SECURITY_PASSWORD_SALT='TEST_SECURITY_PASSWORD_SALT',
-        SECRET_KEY='TEST_SECRET_KEY',
-        INVENIO_INSTANCE_PATH=instance_path,
-        SEARCH_INDEX_PREFIX='test-',
-        INDEXER_DEFAULT_INDEX="examples-stateful-record-v1.0.0",
-        JSONSCHEMAS_HOST='localhost:5000',
-        PIDSTORE_RECID_FIELD='id',
-        SEARCH_ELASTIC_HOSTS=os.environ.get('SEARCH_ELASTIC_HOSTS', None),
-        RECORDS_REST_ENDPOINTS=dict(
-            records=dict(
-                pid_type='recid',
-                pid_minter='recid',
-                pid_fetcher='recid',
-                search_class=RecordsSearch,
-                indexer_class=RecordIndexer,
-                search_index=None,
-                default_endpoint_prefix=True,
-                search_type=None,
-                links_factory_imp=fsm_links_factory,
-                record_serializers={
-                    'application/json': ('invenio_records_rest.serializers'
-                                         ':json_v1_response'),
-                },
-                search_serializers={
-                    'application/json': ('invenio_records_rest.serializers'
-                                         ':json_v1_search'),
-                },
-                list_route='/records/',
-                item_route='/records/<pid(recid):pid_value>',
-                default_media_type='application/json',
-                max_result_window=10000,
-                error_handlers=dict(),
-            ),
-        ),
-        OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS={
-            'records': {
-                'initial_state': 'opened',
-                'json_schemas': [
-                    'https://localhost:5000/schemas/stateful-record-v1.0.0.json'
-                ],
-                'record_class': 'examples.models.ExampleRecord',
-                'pid_type': 'recid',
-                'transition_permission_factory': allow_all,
-                'fsm_permission_factory': allow_all,
-            },
-        },
+
+@pytest.fixture()
+def json_headers(app):
+    """JSON headers."""
+    return [
+        ("Content-Type", "application/json"),
+        ("Accept", "application/json"),
+    ]
+
+
+@pytest.fixture()
+def json_patch_headers(app):
+    """JSON Patch headers."""
+    return [
+        ('Content-Type', 'application/json-patch+json'),
+        ('Accept', 'application/json'),
+    ]
+
+
+# @pytest.fixture()
+# def test_records(db, test_data):
+#     """Load test records."""
+#     loans = []
+#     for data in test_data:
+#         loans.append(create_loan(data))
+#     db.session.commit()
+#     yield loans
+
+
+# @pytest.fixture()
+# def indexed_records(es, test_records):
+#     """Get a function to wait for records to be flushed to index."""
+#     indexer = RecordIndexer()
+#     for pid, record in test_records:
+#         indexer.index(record)
+#     current_search.flush_and_refresh(index="records")
+#
+#     yield test_records
+#
+#     for pid, record in test_records:
+#         indexer.delete_by_id(record.id)
+#     current_search.flush_and_refresh(index="records")
+
+
+@pytest.fixture()
+def users(db, base_app):
+    """Create admin, manager and user."""
+    base_app.config[
+        "OAREPO_FSM_PERMISSIONS_FACTORY"
+    ] = test_views_permissions_factory
+
+    with db.session.begin_nested():
+        datastore = base_app.extensions["security"].datastore
+
+        # create users
+        editor = datastore.create_user(
+            email="editor@test.com", password="123456", active=True
+        )
+        admin = datastore.create_user(
+            email="admin@test.com", password="123456", active=True
+        )
+        user = datastore.create_user(
+            email="user@test.com", password="123456", active=True
+        )
+
+        # Give role to admin
+        admin_role = Role(name="admin")
+        db.session.add(
+            ActionRoles(action=superuser_access.value, role=admin_role)
+        )
+        datastore.add_role_to_user(admin, admin_role)
+        # Give role to user
+        editor_role = Role(name="editor")
+        db.session.add(
+            ActionRoles(action=authenticated_user.value, role=editor_role)
+        )
+        datastore.add_role_to_user(editor, editor_role)
+    db.session.commit()
+
+    return {"admin": admin, "editor": editor, "user": user}
+
+
+@pytest.fixture()
+def test_blueprint(users, app):
+    """Test blueprint with dynamically added testing endpoints."""
+    blue = Blueprint(
+        '_tests',
+        __name__,
+        url_prefix='/_tests/'
     )
 
-    InvenioDB(app_)
+    if blue.name in app.blueprints:
+        del app.blueprints[blue.name]
 
-    from examples.models import ExampleFSM, ExampleRecord
+    for _, user in users.items():
+        if app.view_functions.get('_tests.test_login_{}'.format(user.id)) is not None:
+            del app.view_functions['_tests.test_login_{}'.format(user.id)]
 
-    InvenioIndexer(app_)
-    InvenioSearch(app_)
-    return app_
+        blue.add_url_rule('_login_{}'.format(user.id), view_func=_test_login_factory(user))
 
-
-@pytest.yield_fixture()
-def app(base_app):
-    """Flask application fixture."""
-    base_app._internal_jsonschemas = InvenioJSONSchemas(base_app)
-    InvenioREST(base_app)
-    InvenioPIDStore(base_app)
-    base_app.url_map.converters['pid'] = PIDConverter
-    InvenioRecordsREST(base_app)
-    InvenioRecords(base_app)
-    base_app.register_blueprint(create_blueprint_from_app(base_app))
-
-    OARepoFSM(base_app)
-
-    principal = Principal(base_app)
-
-    login_manager = LoginManager()
-    login_manager.init_app(base_app)
-    login_manager.login_view = 'login'
-
-    @login_manager.user_loader
-    def basic_user_loader(user_id):
-        user_obj = User.query.get(int(user_id))
-        return user_obj
-
-    @base_app.route('/test/login/<int:id>', methods=['GET', 'POST'])
-    def test_login(id):
-        print("test: logging user with id", id)
-        response = make_response()
-        user = User.query.get(id)
-        login_user(user)
-        set_identity(user)
-        return response
-
-    app_loaded.send(None, app=base_app)
-
-    with base_app.app_context():
-        yield base_app
-
-
-@pytest.yield_fixture()
-def client(app):
-    """Get test client."""
-    with app.test_client() as client:
-        yield client
-
-
-@pytest.fixture
-def db(app):
-    """Create database for the tests."""
-    with app.app_context():
-        if not database_exists(str(_db.engine.url)) and \
-            app.config['SQLALCHEMY_DATABASE_URI'] != 'sqlite://':
-            create_database(_db.engine.url)
-        _db.create_all()
-
-    yield _db
-
-    # Explicitly close DB connection
-    _db.session.close()
-    _db.drop_all()
-
-
-@pytest.fixture
-def schemas(app):
-    # trigger registration of new schemas, normally performed
-    # via app_loaded signal that is not emitted in tests
-    with app.app_context():
-        project_dir = dirname(dirname(abspath(__file__)))
-        current_jsonschemas.register_schema(
-            '%s/examples/schemas/examples/' % project_dir, 'stateful-record-v1.0.0.json')
-    return {
-        'stateful-record-v1.0.0':
-            'https://localhost:5000/schemas/stateful-record-v1.0.0.json',
-    }
-
-
-@pytest.fixture
-def mappings(app, schemas):
-    # trigger registration of new schemas, normally performed
-    # via app_loaded signal that is not emitted in tests
-    with app.app_context():
-        project_dir = dirname(dirname(abspath(__file__)))
-        current_search.mappings['stateful-record-v1.0.0'] = \
-            '%s/examples/schemas/examples/stateful-record-v1.0.0.json' % project_dir
-
-
-@pytest.fixture()
-def prepare_es(app, db):
-    runner = app.test_cli_runner()
-    result = runner.invoke(destroy, ['--yes-i-know', '--force'])
-    if result.exit_code:
-        print(result.output, file=sys.stderr)
-    assert result.exit_code == 0
-    result = runner.invoke(init)
-    if result.exit_code:
-        print(result.output, file=sys.stderr)
-    assert result.exit_code == 0
-    indices = current_search_client.indices
-
-    assert build_index_name('stateful-record-v1.0.0') in indices.get_mapping('*')
-
-
-TestUsers = namedtuple('TestUsers', ['u1', 'u2', 'u3', 'r1', 'r2'])
-
-
-@pytest.fixture()
-def test_users(app, db):
-    """Returns named tuple (u1, u2, u3, r1, r2)."""
-    with db.session.begin_nested():
-        r1 = Role(name='role1')
-        r2 = Role(name='role2')
-
-        u1 = User(id=1, email='1@test.com', active=True, roles=[r1])
-        u2 = User(id=2, email='2@test.com', active=True, roles=[r1, r2])
-        u3 = User(id=3, email='3@test.com', active=True, roles=[r2])
-
-        db.session.add(u1)
-        db.session.add(u2)
-        db.session.add(u3)
-
-        db.session.add(r1)
-        db.session.add(r2)
-
-    return TestUsers(u1, u2, u3, r1, r2)
-
-
-@pytest.fixture(scope='function')
-def test_record(app, db, schemas):
-    # let's create a record
-    record_uuid = uuid.uuid4()
-    data = {
-        'b': 'blah',
-        '$schema': schemas['stateful-record-v1.0.0'],
-    }
-    recid_minter(record_uuid, data)
-    from examples.models import ExampleRecord
-    rec = ExampleRecord.create(data, id_=record_uuid)
-    RecordIndexer().index(rec)
-    current_search_client.indices.refresh()
-    current_search_client.indices.flush()
-
-    return rec
+    app.register_blueprint(blue)
+    return blue

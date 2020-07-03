@@ -1,3 +1,3 @@
-from examples.models import ExampleFSM
+from examples.models import ExampleRecord
 
-__all__ = 'ExampleFSM'
+__all__ = 'ExampleRecord'
