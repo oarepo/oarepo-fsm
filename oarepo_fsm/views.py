@@ -5,7 +5,7 @@
 # oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
-"""OArepo FSM library for record state transitions"""
+"""OArepo FSM library for record state transitions."""
 from __future__ import absolute_import, print_function
 
 from functools import wraps
@@ -21,9 +21,13 @@ from oarepo_fsm.mixins import StatefulRecordMixin
 
 
 def validate_record_class(f):
-    """Checks if record inherits from the StatefulRecordMixin and
-       adds a current record instance class to the wrapped function.
     """
+    Checks if record inherits from the StatefulRecordMixin.
+
+    Checks if record inherits from the StatefulRecordMixin and
+    adds a current record instance class to the wrapped function.
+    """
+
     @wraps(f)
     def inner(self, pid, record, *args, **kwargs):
         record_cls = record_class_from_pid_type(pid.pid_type)
@@ -54,6 +58,7 @@ def record_class_from_pid_type(pid_type):
 
 class StatefulRecordActions(ContentNegotiatedMethodView):
     """StatefulRecord actions view."""
+
     view_name = '{0}_{1}'
 
     def __init__(self, serializers, ctx, *args, **kwargs):
@@ -67,7 +72,7 @@ class StatefulRecordActions(ContentNegotiatedMethodView):
     def get(self, pid, record, record_cls, **kwargs):
         """Get Record FSM state response."""
         actions = {}
-        for act, _ in record_cls.user_actions().items():
+        for act in record_cls.user_actions().keys():
             actions[act] = build_url_action_for_pid(pid, act)
 
         result = dict(

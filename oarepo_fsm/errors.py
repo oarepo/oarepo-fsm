@@ -4,7 +4,7 @@
 # oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
-"""OArepo FSM library for record state transitions"""
+"""OArepo FSM library for record state transitions."""
 import json
 
 from flask_login import current_user
@@ -13,6 +13,7 @@ from invenio_rest.errors import RESTException
 
 class FSMException(RESTException):
     """Base Exception for OArepo FSM module, inherit, don't raise."""
+
     code = 400
 
     @property

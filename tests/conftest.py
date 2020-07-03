@@ -1,4 +1,10 @@
-"""Pytest configuration."""
+#
+# Copyright (C) 2020 CESNET.
+#
+# oarepo-fsm is free software; you can redistribute it and/or modify it under
+# the terms of the MIT License; see LICENSE file for more details.
+
+"""OArepo FSM library for record state transitions test module."""
 
 from __future__ import absolute_import, print_function
 
@@ -76,6 +82,11 @@ def record(app):
 
     pid = record_pid_minter(record_uuid, data=new_record)
     record = ExampleRecord.create(data=new_record, id_=record_uuid)
+
+    import inspect
+    import pprint
+    pprint.pprint(inspect.classify_class_attrs(ExampleRecord))
+
     db.session.commit()
     yield record
 
@@ -163,6 +174,7 @@ def users(db, base_app):
 
 @pytest.fixture()
 def test_blueprint(users, app):
+    """Test blueprint with dynamically added testing endpoints."""
     blue = Blueprint(
         '_tests',
         __name__,

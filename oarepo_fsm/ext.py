@@ -5,7 +5,7 @@
 # oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
-"""OArepo FSM library for record state transitions"""
+"""OArepo FSM library for record state transitions."""
 
 from __future__ import absolute_import, print_function
 
@@ -29,14 +29,6 @@ class _OARepoFSMState(object):
     def app_loaded(self, app):
         with app.app_context():
             self._register_blueprints(app)
-            self._connect_model_callbacks(app)
-            self._connect_index_callbacks(app)
-
-    def _connect_model_callbacks(self, app):
-        return
-
-    def _connect_index_callbacks(self, app):
-        return
 
     def _register_blueprints(self, app):
         enabled_endpoints = app.config.get('OAREPO_FSM_ENABLED_REST_ENDPOINTS', [])

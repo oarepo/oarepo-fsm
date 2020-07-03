@@ -4,13 +4,13 @@
 # oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
-"""OArepo FSM library for record state transitions"""
+"""OArepo FSM library for record state transitions."""
 
 from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError
 
 
 def has_permission(f):
-    """Decorator to check the transition should be manually triggered."""
+    """Decorator to check the transition permission requirements are fulfilled."""
 
     def inner(self, record, **kwargs):
         if self.permission and not self.permission(record).can():
@@ -58,10 +58,16 @@ class Transition(object):
 
     @has_permission
     def check_permission(self, record):
+        """Check transition permission requirements."""
         return True
 
 
 def transition(obj: Transition):
+    """Decorator that marks the wrapped function as a state transition.
+
+    :params obj: :class:`~oarepo_fsm.mixins.Transition` a transition specification instance.
+    :returns: A wrapper around a wrapped function, with added `_fsm` field containing the `Transition` spec.
+    """
     def inner(f):
         def wrapper(self, *args, **kwargs):
             obj.execute(record=self, **kwargs)

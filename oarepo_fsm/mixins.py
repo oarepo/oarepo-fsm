@@ -4,7 +4,7 @@
 # oarepo-fsm is free software; you can redistribute it and/or modify it under
 # the terms of the MIT License; see LICENSE file for more details.
 
-"""OArepo FSM library for record state transitions"""
+"""OArepo FSM library for record state transitions."""
 import inspect
 
 from jsonpatch import apply_patch
@@ -14,11 +14,14 @@ from oarepo_fsm.errors import InvalidPermissionError
 
 class StatefulRecordMixin(object):
     """
+    Enhances Record model with FSM managed states.
+
     A mixin for Record class that makes sure state field could not be modified through a REST API updates.
     Note that this mixin is not enough, always use oarepo_fsm.marshmallow.StatePreservingMixin
     as well. The reason is that Invenio does not inject custom Record implementation for PUT, PATCH and DELETE
     operations.
     """
+
     def clear(self):
         """Preserves the state even if the record is cleared and all metadata wiped out."""
         state = self.get('state')
@@ -42,6 +45,11 @@ class StatefulRecordMixin(object):
 
     @classmethod
     def actions(cls):
+        """All transition actions defined on a record model.
+
+        :params cls:
+        :returns: A dict of all actions defined on a record model.
+        """
         if not getattr(cls, '_actions', False):
             cls._actions = {}
             funcs = inspect.getmembers(cls, predicate=inspect.isfunction)
@@ -54,10 +62,20 @@ class StatefulRecordMixin(object):
 
     @classmethod
     def transitions(cls):
+        """All transitions defined on a record model.
+
+        :params cls:
+        :returns: A dict of all transition specs defined on a record model.
+        """
         return {act: getattr(fn, '_fsm') for act, fn in cls.actions().items()}
 
     @classmethod
     def user_actions(cls):
+        """Actions that can be triggered by a current_user.
+
+        :params cls:
+        :returns: A dict of all actions that can be triggered by a current user.
+        """
         ut = {}
         all_actions = cls.actions()
 
