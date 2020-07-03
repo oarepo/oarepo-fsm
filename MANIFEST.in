@@ -18,3 +18,27 @@ include .editorconfig
 include .tx/config
 prune docs/_build
 recursive-include oarepo_fsm/translations *.po *.pot *.mo
+
+include *.md
+include *.py
+include *.rst
+include *.sh
+include *.test
+include *.yml
+include *.in
+include *.txt
+include LICENSE
+include pytest.ini
+
+recursive-include docs *.png
+recursive-include docs *.yml
+recursive-include docs *.py
+recursive-include docs *.rst
+
+exclude .licensevars
+exclude tests
+recursive-exclude examples *
+recursive-exclude tests *
+exclude .coveragerc
+exclude .envrc
+exclude requirements-doc.txt
