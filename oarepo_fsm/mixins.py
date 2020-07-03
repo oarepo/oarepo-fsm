@@ -9,7 +9,8 @@ import inspect
 
 from jsonpatch import apply_patch
 
-from oarepo_fsm.errors import InvalidPermissionError, DirectStateModificationError
+from oarepo_fsm.errors import DirectStateModificationError, \
+    InvalidPermissionError
 
 
 class StatefulRecordMixin(object):
