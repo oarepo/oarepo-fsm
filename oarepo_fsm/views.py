@@ -10,13 +10,13 @@ from __future__ import absolute_import, print_function
 
 from functools import wraps
 
-from flask import jsonify, url_for, current_app
+from flask import current_app, jsonify, url_for
 from invenio_db import db
 from invenio_records_rest import current_records_rest
 from invenio_records_rest.views import pass_record
 from invenio_rest import ContentNegotiatedMethodView
 
-from oarepo_fsm.errors import RecordNotStatefulError, ActionNotAvailableError
+from oarepo_fsm.errors import ActionNotAvailableError, RecordNotStatefulError
 from oarepo_fsm.mixins import StatefulRecordMixin
 
 

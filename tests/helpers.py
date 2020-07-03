@@ -9,12 +9,11 @@
 import copy
 import uuid
 
+from examples.models import ExampleRecord
 from flask_security import login_user
 from invenio_db import db
 from invenio_pidstore.providers.recordid import RecordIdProvider
 from invenio_records_rest.utils import allow_all
-
-from examples.models import ExampleRecord
 
 
 def record_pid_minter(record_uuid, data):

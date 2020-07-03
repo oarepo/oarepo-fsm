@@ -2,7 +2,7 @@ from flask_principal import RoleNeed
 from invenio_access import Permission
 from invenio_records import Record
 
-from oarepo_fsm.decorators import transition, Transition
+from oarepo_fsm.decorators import Transition, transition
 from oarepo_fsm.mixins import StatefulRecordMixin
 
 

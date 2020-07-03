@@ -8,9 +8,9 @@
 """Test StatefulRecord mixin."""
 
 import pytest
+from examples.models import ExampleRecord
 from flask_security import login_user
 
-from examples.models import ExampleRecord
 from oarepo_fsm.decorators import Transition
 from oarepo_fsm.errors import InvalidSourceStateError
 

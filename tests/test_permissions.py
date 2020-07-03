@@ -7,9 +7,9 @@
 
 """Test transition permissions."""
 import pytest
+from examples.models import ExampleRecord
 from flask_security import login_user
 
-from examples.models import ExampleRecord
 from oarepo_fsm.errors import InvalidPermissionError
 
 
@@ -42,4 +42,3 @@ def test_transition_permissions(record: ExampleRecord, users):
     assert record['state'] == 'archived'
     record.publish()
     assert record['state'] == 'published'
-
