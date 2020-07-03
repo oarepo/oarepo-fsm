@@ -9,7 +9,7 @@ import inspect
 
 from jsonpatch import apply_patch
 
-from oarepo_fsm.errors import InvalidPermissionError
+from oarepo_fsm.errors import InvalidPermissionError, DirectStateModificationError
 
 
 class StatefulRecordMixin(object):
@@ -35,8 +35,13 @@ class StatefulRecordMixin(object):
         :params patch: Dictionary of record metadata.
         :returns: A new :class:`Record` instance.
         """
-        data = apply_patch(dict(self), patch)
-        return self.__class__(data, model=self.model)
+        self_data = dict(self)
+        patched_data = apply_patch(dict(self), patch)
+
+        if patched_data['state'] != self_data['state']:
+            raise DirectStateModificationError()
+
+        return self.__class__(patched_data, model=self.model)
 
     def update(self, e=None, **f):
         """Dictionary update."""

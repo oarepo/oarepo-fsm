@@ -44,7 +44,7 @@ class _OARepoFSMState(object):
             econf = rest_config.get(e)
             record_class = None
             try:
-                record_class: StatefulRecordMixin = econf['record_class']
+                record_class: StatefulRecordMixin = obj_or_import_string(econf['record_class'])
             except KeyError:
                 raise AttributeError('record_class must be set on RECORDS_REST_ENDPOINTS({})'.format(e))
 
@@ -69,6 +69,7 @@ class _OARepoFSMState(object):
                 default_media_type=econf['default_media_type'],
                 ctx={}
             )
+            print(view_options)
 
             record_fsm = StatefulRecordActions.as_view(
                 fsm_view_name,

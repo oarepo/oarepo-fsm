@@ -11,6 +11,7 @@ import json
 from flask import url_for
 from invenio_pidstore.fetchers import recid_fetcher_v2
 
+from examples import ExampleRecord
 from oarepo_fsm.views import build_url_action_for_pid
 
 
@@ -18,8 +19,9 @@ def test_record_rest_endpoints(app, json_headers):
     """Test REST API FSM endpoints."""
     url_rules = [r.rule for r in app.url_map.iter_rules()]
     url_endpoints = [r.endpoint for r in app.url_map.iter_rules()]
-    assert '/records/<pid(recid):pid_value>/fsm' in url_rules
-    assert '/records/<pid(recid):pid_value>/fsm/<any(archive,close,open,publish):action>' in url_rules
+    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/fsm' in url_rules
+    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/fsm/' \
+           '<any(archive,close,open,publish):action>' in url_rules
     assert 'oarepo_fsm.recid_fsm' in url_endpoints
     assert 'oarepo_fsm.recid_actions' in url_endpoints
 
@@ -126,6 +128,6 @@ def test_rest_state_change_prevented(app, record, users, json_patch_headers, tes
             json=[{"op": "replace", "path": "/state", "value": "boo"}],
             headers=json_patch_headers)
 
-        res_dict = json.loads(res.data.decode('utf-8'))
-        print(res_dict)
         assert res.status_code == 403
+        rec = ExampleRecord.get_record(record.id)
+        assert rec['state'] == record['state']

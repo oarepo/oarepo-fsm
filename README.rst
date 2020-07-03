@@ -33,45 +33,36 @@ Run the following commands to bootstrap your environment ::
 
     git clone https://github.com/oarepo/oarepo-fsm
     cd oarepo-fsm
-    pip install -e .
-
-Once you have installed your DBMS, run the following to create your app's
-database tables and perform the initial migration ::
-
-    invenio db init create
-    invenio alembic upgrade heads
-    invenio run
+    pip install -e .[devel]
 
 
 Configuration
 -------------
 
-In order to use this library, you need to define a FSM enabled
-model in your app, containing a FSMField column ::
+To use this library, specify the FSM enabled Record enpoints in your config like this ::
 
-    class RecordModelFSM(db.Model):
-        record_uuid = db.Column(db.UUID)
-        state = db.Column(FSMField, nullable = False)
+    OAREPO_FSM_ENABLED_REST_ENDPOINTS = ['recid']
 
-In your application config, the following configuration block needs to be present,
-referencing the model that you created in the step above ::
+Where **recid** is the prefix key into your **RECORDS_REST_ENDPOINTS** configuration.
 
-    OAREPO_FSM_ENABLED_RECORDS_REST_ENDPOINTS = {
-        'records': {
-            'json_schemas': [
-                'records/record-v1.0.0.json'
-            ],
-            'record_marshmallow': RecordSchemaV1,
-            'metadata_marshmallow': MetadataSchemaV1,
+Usage
+-----
 
-            'record_class': Record,
-            'record_pid_type': 'recid',
-            'fsm_record_class': FSMRecord,
+In order to use this library, you need to define a Record
+model in your app, that inherits from a **StatefulRecordMixin** column ::
 
-            'transition_permission_factory': allow_authenticated,
-            'fsm_permission_factory': allow_authenticated,
-        }
-    }
+    from invenio_records import Record
+    from oarepo_fsm.mixins import StatefulRecordMixin
+
+    class RecordModelFSM(StatefulRecordMixin, Record):
+    ...
+
+To define FSM transitions on this class, create methods decorated with **@transition(...)**, e.g.:
+
+    @transition(Transition(src=['open', 'archived'], dest='published', permission=editor_permission))
+    def publish(self):
+        print('record published')
+
 
 REST API Usage
 --------------

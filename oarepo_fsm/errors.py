@@ -40,6 +40,19 @@ class FSMException(RESTException):
         return json.dumps(body)
 
 
+class DirectStateModificationError(FSMException):
+    """Raised when a direct modification of record state is attempted."""
+
+    code = 403
+
+    def __init__(self, **kwargs):
+        """Initialize exception."""
+        self.description = (
+            "Direct modification of state is not allowed."
+        )
+        super().__init__(**kwargs)
+
+
 class ActionNotAvailableError(FSMException):
     """Raised when the requested action is not available to current user."""
 

@@ -59,7 +59,7 @@ def app_config(app_config):
                                      ':json_v1_search'),
             },
             list_route='/records/',
-            item_route='/records/<pid(recid):pid_value>',
+            item_route='/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>',
             default_media_type='application/json',
             create_permission_factory_imp=allow_all,
             delete_permission_factory_imp=allow_all,
@@ -83,10 +83,6 @@ def record(app):
 
     pid = record_pid_minter(record_uuid, data=new_record)
     record = ExampleRecord.create(data=new_record, id_=record_uuid)
-
-    import inspect
-    import pprint
-    pprint.pprint(inspect.classify_class_attrs(ExampleRecord))
 
     db.session.commit()
     yield record
