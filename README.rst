@@ -45,6 +45,11 @@ To use this library, specify the FSM enabled Record enpoints in your config like
 
 Where **recid** is the prefix key into your **RECORDS_REST_ENDPOINTS** configuration.
 
+Check that correct record_class is being used on the RECORDS_REST_ENDPOINT's item_route ::
+
+    item_route='/records/<pid(recid,record_class="yourapp.models:RecordModelFSM"):pid_value>',
+
+
 Usage
 -----
 
@@ -67,49 +72,25 @@ To define FSM transitions on this class, create methods decorated with **@transi
 REST API Usage
 --------------
 
-To get current record state and possible transitions (transitions wil be filtered with a permission factory/guards) ::
+To get current record state and possible transition actions (available actions are filtered with a permission factory) ::
 
     GET <record_rest_endpoint>/fsm
     >>>
     {
-        state: <state representation as in details>,
-        transitions: [<transition representation as in details>]
+        metadata: {
+            state: <current state of the record>
+        }
+        links: {
+            actions: {
+                <action_name>: <action_url>,
+                ...
+        }
     }
 
-Transition record to a new state ::
+To invoke a specific transition action, do ::
 
-    POST <record_rest_endpoint>/fsm
-    {
-      transition: <transition code>
-    }
+    POST <record_rest_endpoint>/fsm/<action_name>
 
-
-
-
-Details
--------
-
-Indexer
-........
-
-This library provides a **before_record_index** hook, that looks for
-the indexed record's current state in the FSM model configured by **OAREPO_FSM**.
-When it founds one, it adds the following field before indexing the record ::
-
-    _invenioRecordState: {
-        state: <code>,
-       transitions:
-         {
-          next.code: <next.docstring>,
-         },
-    }
-
-Signals
-.......
-
-This library listens to the **after_record_insert** signal and automatically
-inserts corresponding entries to the FSM model configured by **OAREPO_FSM** for
-records with matching schema.
 
 Further documentation is available on
 https://oarepo-fsm.readthedocs.io/
