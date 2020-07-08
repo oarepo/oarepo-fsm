@@ -17,21 +17,21 @@ from invenio_records_rest.views import pass_record
 from invenio_rest import ContentNegotiatedMethodView
 
 from oarepo_fsm.errors import ActionNotAvailableError, RecordNotStatefulError
-from oarepo_fsm.mixins import StatefulRecordMixin
+from oarepo_fsm.mixins import FSMMixin
 
 
 def validate_record_class(f):
     """
-    Checks if record inherits from the StatefulRecordMixin.
+    Checks if record inherits from the FSMMixin.
 
-    Checks if record inherits from the StatefulRecordMixin and
+    Checks if record inherits from the FSMMixin and
     adds a current record instance class to the wrapped function.
     """
 
     @wraps(f)
     def inner(self, pid, record, *args, **kwargs):
         record_cls = record_class_from_pid_type(pid.pid_type)
-        if not issubclass(record_cls, StatefulRecordMixin):
+        if not issubclass(record_cls, FSMMixin):
             raise RecordNotStatefulError(record_cls)
         return f(self, pid=pid, record=record, record_cls=record_cls, *args, **kwargs)
     return inner
@@ -56,7 +56,7 @@ def record_class_from_pid_type(pid_type):
         return None
 
 
-class StatefulRecordActions(ContentNegotiatedMethodView):
+class FSMRecordActions(ContentNegotiatedMethodView):
     """StatefulRecord actions view."""
 
     view_name = '{0}_{1}'

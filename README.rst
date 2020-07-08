@@ -54,12 +54,12 @@ Usage
 -----
 
 In order to use this library, you need to define a Record
-model in your app, that inherits from a **StatefulRecordMixin** column ::
+model in your app, that inherits from a **FSMMixin** column ::
 
     from invenio_records import Record
-    from oarepo_fsm.mixins import StatefulRecordMixin
+    from oarepo_fsm.mixins import FSMMixin
 
-    class RecordModelFSM(StatefulRecordMixin, Record):
+    class RecordModelFSM(FSMMixin, Record):
     ...
 
 To define FSM transitions on this class, create methods decorated with **@transition(..)** e.g. ::
