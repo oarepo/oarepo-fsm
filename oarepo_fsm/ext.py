@@ -14,8 +14,8 @@ from invenio_base.signals import app_loaded
 from invenio_records_rest.utils import obj_or_import_string
 
 from . import config
-from .mixins import StatefulRecordMixin
-from .views import StatefulRecordActions
+from .mixins import FSMMixin
+from .views import FSMRecordActions
 
 
 class _OARepoFSMState(object):
@@ -44,18 +44,18 @@ class _OARepoFSMState(object):
             econf = rest_config.get(e)
             record_class = None
             try:
-                record_class: StatefulRecordMixin = obj_or_import_string(econf['record_class'])
+                record_class: FSMMixin = obj_or_import_string(econf['record_class'])
             except KeyError:
                 raise AttributeError('record_class must be set on RECORDS_REST_ENDPOINTS({})'.format(e))
 
-            if not issubclass(record_class, StatefulRecordMixin):
-                raise ValueError('{} must be a subclass of oarepo_fsm.mixins.StatefulRecordMixin'.format(record_class))
+            if not issubclass(record_class, FSMMixin):
+                raise ValueError('{} must be a subclass of oarepo_fsm.mixins.FSMMixin'.format(record_class))
 
             fsm_url = "{0}/fsm".format(econf["item_route"])
-            fsm_view_name = StatefulRecordActions.view_name.format(e, 'fsm')
+            fsm_view_name = FSMRecordActions.view_name.format(e, 'fsm')
 
             distinct_actions = record_class.actions()
-            actions_view_name = StatefulRecordActions.view_name.format(e, 'actions')
+            actions_view_name = FSMRecordActions.view_name.format(e, 'actions')
             actions_url = "{0}/<any({1}):action>".format(
                 fsm_url, ",".join([name for name, fn in distinct_actions.items()])
             )
@@ -71,12 +71,12 @@ class _OARepoFSMState(object):
             )
             print(view_options)
 
-            record_fsm = StatefulRecordActions.as_view(
+            record_fsm = FSMRecordActions.as_view(
                 fsm_view_name,
                 **view_options
             )
 
-            record_actions = StatefulRecordActions.as_view(
+            record_actions = FSMRecordActions.as_view(
                 actions_view_name,
                 **view_options
             )

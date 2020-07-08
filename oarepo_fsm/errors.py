@@ -78,12 +78,12 @@ class InvalidSourceStateError(FSMException):
 
 
 class RecordNotStatefulError(FSMException):
-    """Raised when record does not inherit StatefulRecordMixin."""
+    """Raised when record does not inherit FSMMixin."""
 
     def __init__(self, record_cls=None, **kwargs):
         """Initialize exception."""
         self.description = (
-            "{} must be a subclass of oarepo_fsm.mixins.StatefulRecordMixin".format(record_cls)
+            "{} must be a subclass of oarepo_fsm.mixins.FSMMixin".format(record_cls)
         )
         super().__init__(**kwargs)
 

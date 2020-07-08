@@ -3,7 +3,7 @@ from invenio_access import Permission
 from invenio_records import Record
 
 from oarepo_fsm.decorators import Transition, transition
-from oarepo_fsm.mixins import StatefulRecordMixin
+from oarepo_fsm.mixins import FSMMixin
 
 
 def editor_permission(record):
@@ -14,7 +14,7 @@ def admin_permission(record):
     return Permission(RoleNeed('admin'))
 
 
-class ExampleRecord(StatefulRecordMixin, Record):
+class ExampleRecord(FSMMixin, Record):
 
     @transition(Transition(src=['closed'], dest='open'))
     def open(self):

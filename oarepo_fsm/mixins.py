@@ -13,7 +13,7 @@ from oarepo_fsm.errors import DirectStateModificationError, \
     InvalidPermissionError
 
 
-class StatefulRecordMixin(object):
+class FSMMixin(object):
     """
     Enhances Record model with FSM managed states.
 
