@@ -62,7 +62,7 @@ model in your app, that inherits from a **StatefulRecordMixin** column ::
     class RecordModelFSM(StatefulRecordMixin, Record):
     ...
 
-To define FSM transitions on this class, create methods decorated with **@transition(...)**, e.g.:
+To define FSM transitions on this class, create methods decorated with **@transition(..)** e.g. ::
 
     @transition(Transition(src=['open', 'archived'], dest='published', permission=editor_permission))
     def publish(self):
@@ -72,7 +72,7 @@ To define FSM transitions on this class, create methods decorated with **@transi
 REST API Usage
 --------------
 
-To get current record state and possible transition actions (available actions are filtered with a permission factory) ::
+To get current record state and possible transitions (only actions that you have permission to invoke will be returned) ::
 
     GET <record_rest_endpoint>/fsm
     >>>
