@@ -115,7 +115,7 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
                     assert res_dict[k] == v
 
 
-def test_rest_state_change_prevented(app, record, users, json_patch_headers, test_blueprint):
+def test_rest_state_change_prevented(app, record, users, json_patch_headers, json_headers, test_blueprint):
     url = url_for('invenio_records_rest.recid_item',
                   pid_value=recid_fetcher_v2(record.id, record).pid_value)
 
@@ -123,6 +123,11 @@ def test_rest_state_change_prevented(app, record, users, json_patch_headers, tes
 
     with app.test_client() as client:
         client.get(url_for('_tests.test_login_{}'.format(users['admin'].id)))
+        print(url)
+        res = client.get(
+            url, headers=json_headers
+        )
+        print(json.loads(res.data.decode('utf-8')))
         res = client.patch(
             url,
             json=[{"op": "replace", "path": "/state", "value": "boo"}],
