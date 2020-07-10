@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 
 from functools import wraps
 
-from flask import current_app, jsonify, url_for
+from flask import current_app, jsonify, url_for, request
 from invenio_db import db
 from invenio_records_rest import current_records_rest
 from invenio_records_rest.views import pass_record
@@ -96,7 +96,7 @@ class FSMRecordActions(ContentNegotiatedMethodView):
             raise ActionNotAvailableError(action)
 
         # Invoke requested action for the current record
-        ua(record)
+        ua(record, **request.json)
         record.commit()
         db.session.commit()
         return self.make_response(

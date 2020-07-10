@@ -40,6 +40,10 @@ class FSMException(RESTException):
         return json.dumps(body)
 
 
+class MissingRequiredParameterError(FSMException):
+    """Exception raised when required parameter is missing."""
+
+
 class DirectStateModificationError(FSMException):
     """Raised when a direct modification of record state is attempted."""
 

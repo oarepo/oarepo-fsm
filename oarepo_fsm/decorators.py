@@ -6,7 +6,7 @@
 
 """OArepo FSM library for record state transitions."""
 
-from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError
+from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError, MissingRequiredParameterError
 
 
 def has_permission(f):
@@ -33,18 +33,32 @@ def has_valid_state(f):
     return inner
 
 
+def has_required_params(trans):
+    """Decorator to ensure that all required parameters has been passed to wrapped function."""
+    def wrapper(f):
+        def inner(self, *args, **kwargs):
+            missing = [p for p in trans.REQUIRED_PARAMS if p not in kwargs]
+            if missing:
+                msg = "Required input parameters are missing '{}'".format(
+                    missing
+                )
+                raise MissingRequiredParameterError(description=msg)
+
+            return f(self, *args, **kwargs)
+        return inner
+    return wrapper
+
+
 class Transition(object):
     """A transition specification class."""
 
     def __init__(
-        self, src, dest, permission=None, **kwargs
+        self, src, dest, permission=None, required=None, **kwargs
     ):
         """Init transition object."""
         self.src = src
         self.dest = dest
-        # self.initial_state = current_app.config.get(
-        #     'OAREPO_FSM_INITIAL_STATE', None
-        # )
+        self.REQUIRED_PARAMS = required or []
         # default_perm = current_app.config[
         #     'OAREPO_FSM_DEFAULT_PERMISSION_FACTORY'
         # ]
@@ -62,18 +76,19 @@ class Transition(object):
         return True
 
 
-def transition(obj: Transition):
+def transition(t: Transition):
     """Decorator that marks the wrapped function as a state transition.
 
     :params obj: :class:`~oarepo_fsm.mixins.Transition` a transition specification instance.
     :returns: A wrapper around a wrapped function, with added `_fsm` field containing the `Transition` spec.
     """
     def inner(f):
+        @has_required_params(t)
         def wrapper(self, *args, **kwargs):
-            obj.execute(record=self, **kwargs)
+            t.execute(record=self, **kwargs)
             f(self, *args, **kwargs)
 
-        wrapper._fsm = obj
+        wrapper._fsm = t
         return wrapper
 
     return inner

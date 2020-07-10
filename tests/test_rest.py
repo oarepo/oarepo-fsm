@@ -75,21 +75,21 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
     """TEST FSM REST API logged in as certain users."""
     test_cases = [
         (users['user'],
-         ['open', 'close', 'publish'],
+         [('open', {'id': 1}), ('close', {'id': 1}), ('publish', {})],
          [
              (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
              (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
              (404, {'message': 'Action publish is not available on this record'})
          ]),
         (users['editor'],
-         ['open', 'close', 'publish'],
+         [('open', {'id': 2}), ('close', {'id': 2}), ('publish', {})],
          [
              (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
              (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
              (400, {'message': 'Transition from closed to published is not allowed'})
          ]),
         (users['admin'],
-         ['open', 'close', 'archive', 'publish'],
+         [('open', {'id': 3}), ('close', {'id': 3}), ('archive', {}), ('publish', {})],
          [
              (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
              (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
@@ -103,12 +103,13 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
             client.get(url_for('_tests.test_login_{}'.format(user.id)))
             for idx, action in enumerate(actions):
                 expected_status, expected_body = expected_results[idx]
+                actname, kwargs = action
 
                 url = url_for('oarepo_fsm.recid_actions',
-                              action=action,
+                              action=actname,
                               pid_value=recid_fetcher_v2(record.id, record).pid_value)
 
-                res = client.post(url, headers=json_headers)
+                res = client.post(url, json={**kwargs}, headers=json_headers)
                 res_dict = json.loads(res.data.decode('utf-8'))
                 assert res.status_code == expected_status
                 for k, v in expected_body.items():
@@ -130,7 +131,7 @@ def test_rest_state_change_prevented(app, record, users, json_patch_headers, jso
         print(json.loads(res.data.decode('utf-8')))
         res = client.patch(
             url,
-            json=[{"op": "replace", "path": "/state", "value": "boo"}],
+            data=json.dumps([{"op": "replace", "path": "/state", "value": "boo"}]),
             headers=json_patch_headers)
 
         assert res.status_code == 403

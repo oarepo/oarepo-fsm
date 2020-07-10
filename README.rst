@@ -64,8 +64,8 @@ model in your app, that inherits from a **FSMMixin** column ::
 
 To define FSM transitions on this class, create methods decorated with **@transition(..)** e.g. ::
 
-    @transition(Transition(src=['open', 'archived'], dest='published', permission=editor_permission))
-    def publish(self):
+    @transition(Transition(src=['open', 'archived'], dest='published', required=[], permission=editor_permission))
+    def publish(self, **kwargs):
         print('record published')
 
 

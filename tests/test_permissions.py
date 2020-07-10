@@ -20,15 +20,15 @@ def test_transition_permissions(record: ExampleRecord, users):
     with pytest.raises(InvalidPermissionError):
         record.archive()
 
-    record.open()
+    record.open(id='abc')
     with pytest.raises(InvalidPermissionError):
         record.publish()
-    record.close()
+    record.close(id=4)
 
     # User editor can publish, but not archive record
     login_user(users['editor'])
     assert record['state'] == 'closed'
-    record.open()
+    record.open(id='bca')
     record.publish()
     assert record['state'] == 'published'
 
