@@ -9,11 +9,10 @@
 import pytest
 from flask_security import login_user
 
-from examples.models import ExampleRecord
 from oarepo_fsm.errors import MissingRequiredParameterError
 
 
-def test_transition_kwargs(record: ExampleRecord, users):
+def test_transition_kwargs(record, users):
     login_user(users['user'])
     assert record['state'] == 'closed'
     with pytest.raises(MissingRequiredParameterError):

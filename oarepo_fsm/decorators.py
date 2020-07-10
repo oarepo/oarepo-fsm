@@ -6,7 +6,8 @@
 
 """OArepo FSM library for record state transitions."""
 
-from oarepo_fsm.errors import InvalidPermissionError, InvalidSourceStateError, MissingRequiredParameterError
+from oarepo_fsm.errors import InvalidPermissionError, \
+    InvalidSourceStateError, MissingRequiredParameterError
 
 
 def has_permission(f):

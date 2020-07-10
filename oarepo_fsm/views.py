@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 
 from functools import wraps
 
-from flask import current_app, jsonify, url_for, request
+from flask import current_app, jsonify, request, url_for
 from invenio_db import db
 from invenio_records_rest import current_records_rest
 from invenio_records_rest.views import pass_record
