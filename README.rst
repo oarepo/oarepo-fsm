@@ -64,9 +64,20 @@ model in your app, that inherits from a **FSMMixin** column ::
 
 To define FSM transitions on this class, create methods decorated with **@transition(..)** e.g. ::
 
-    @transition(Transition(src=['open', 'archived'], dest='published', permission=editor_permission))
-    def publish(self):
+    @transition(Transition(
+        src=['open', 'archived'],
+        dest='published',
+        required=['id'],
+        permission=editor_permission))
+    def publish(self, **kwargs):
         print('record published')
+
+Where **Transition** is defined as:
+
+  - **src**: record must be in one of the source states before transition could happen
+  - **dest**: target state of the transition
+  - **required**: a list of required ``**kwargs`` that must be passed to the ``@transition`` decorated function
+  - **permission**: currently logged user must have this permission to execute the transition
 
 
 REST API Usage

@@ -18,12 +18,12 @@ from oarepo_fsm.errors import InvalidSourceStateError
 def test_record_transition(record: ExampleRecord):
     # Test state is changed when transition conditions are met
     assert record['state'] == 'closed'
-    record.open()
+    record.open(id='ccc')
     assert record['state'] == 'open'
 
     # Test state is not changed when transition conditions are not met
     with pytest.raises(InvalidSourceStateError):
-        record.open()
+        record.open(id='aaa')
     assert record['state'] == 'open'
 
 
