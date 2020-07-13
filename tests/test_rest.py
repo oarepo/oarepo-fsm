@@ -124,11 +124,9 @@ def test_rest_state_change_prevented(app, record, users, json_patch_headers, jso
 
     with app.test_client() as client:
         client.get(url_for('_tests.test_login_{}'.format(users['admin'].id)))
-        print(url)
         res = client.get(
             url, headers=json_headers
         )
-        print(json.loads(res.data.decode('utf-8')))
         res = client.patch(
             url,
             data=json.dumps([{"op": "replace", "path": "/state", "value": "boo"}]),
