@@ -97,10 +97,10 @@ class InvalidPermissionError(FSMException):
 
     code = 403
 
-    def __init__(self, permission=None, **kwargs):
+    def __init__(self, permissions=None, **kwargs):
         """Initialize exception."""
         self.description = (
             "This action is not permitted "
-            "for your user {}. Required: '{}'".format(current_user, permission)
+            "for your user {}. Required: '{}'".format(current_user, permissions)
         )
         super().__init__(**kwargs)

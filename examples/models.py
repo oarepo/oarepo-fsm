@@ -24,10 +24,10 @@ class ExampleRecord(FSMMixin, Record):
     def close(self, **kwargs):
         print('record {} closed'.format(kwargs.get('id')))
 
-    @transition(Transition(src=['open', 'archived'], dest='published', permission=editor_permission))
+    @transition(Transition(src=['open', 'archived'], dest='published', permissions=[editor_permission]))
     def publish(self, **kwargs):
         print('record published')
 
-    @transition(Transition(src=['closed', 'published'], dest='archived', permission=admin_permission))
+    @transition(Transition(src=['closed', 'published'], dest='archived', permissions=[admin_permission]))
     def archive(self, **kwargs):
         print('record archived')

@@ -14,9 +14,9 @@ def has_permission(f):
     """Decorator to check the transition permission requirements are fulfilled."""
 
     def inner(self, record, **kwargs):
-        if self.permission and not self.permission(record).can():
+        if self.permissions and not any([p(record).can() for p in self.permissions]):
             raise InvalidPermissionError(
-                permission=self.permission(record)
+                permissions=self.permissions
             )
         return f(self, record, **kwargs)
 
@@ -54,16 +54,16 @@ class Transition(object):
     """A transition specification class."""
 
     def __init__(
-        self, src, dest, permission=None, required=None, **kwargs
+        self, src, dest, permissions=None, required=None, **kwargs
     ):
         """Init transition object."""
         self.src = src
         self.dest = dest
         self.REQUIRED_PARAMS = required or []
-        # default_perm = current_app.config[
+        # default_perms = current_app.config[
         #     'OAREPO_FSM_DEFAULT_PERMISSION_FACTORY'
         # ]
-        self.permission = permission  # or default_perm
+        self.permissions = permissions or []  # or default_perms
 
     @has_valid_state
     @has_permission
