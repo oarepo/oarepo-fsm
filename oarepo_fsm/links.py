@@ -14,6 +14,11 @@ from oarepo_fsm.views import record_class_from_pid_type
 
 
 def record_fsm_links_factory(pid, record=None, **kwargs):
+    """Factory for record FSM links generation.
+
+    :param pid: A Persistent Identifier instance.
+    :returns: Dictionary containing a list of useful links + FSM link for the record.
+    """
     links = default_links_factory(pid, record=None, **kwargs)
     rec_cls = record_class_from_pid_type(pid.pid_type)
 
