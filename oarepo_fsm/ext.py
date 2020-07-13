@@ -69,7 +69,6 @@ class _OARepoFSMState(object):
                 default_media_type=econf['default_media_type'],
                 ctx={}
             )
-            print(view_options)
 
             record_fsm = FSMRecordActions.as_view(
                 fsm_view_name,

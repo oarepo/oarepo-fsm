@@ -49,6 +49,11 @@ Check that correct record_class is being used on the RECORDS_REST_ENDPOINT's ite
 
     item_route='/records/<pid(recid,record_class="yourapp.models:RecordModelFSM"):pid_value>',
 
+To automatically add a link to the FSM endpoint to your record links, use the following ``links_factory_imp`` in
+your **RECORDS_REST_ENDPOINTS** config ::
+
+    links_factory_imp='oarepo_fsm.links:record_fsm_links_factory',
+
 
 Usage
 -----

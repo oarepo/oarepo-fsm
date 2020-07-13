@@ -59,6 +59,7 @@ def app_config(app_config):
                                      ':json_v1_search'),
             },
             list_route='/records/',
+            links_factory_imp='oarepo_fsm.links:record_fsm_links_factory',
             item_route='/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>',
             default_media_type='application/json',
             create_permission_factory_imp=allow_all,
