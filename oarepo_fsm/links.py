@@ -17,13 +17,14 @@ def record_fsm_links_factory(pid, record=None, **kwargs):
     """Factory for record FSM links generation.
 
     :param pid: A Persistent Identifier instance.
+    :param record: An instance of a Record.
     :returns: Dictionary containing a list of useful links + FSM link for the record.
     """
-    links = default_links_factory(pid, record=None, **kwargs)
+    links = default_links_factory(pid, record, **kwargs)
     rec_cls = record_class_from_pid_type(pid.pid_type)
 
     if issubclass(rec_cls, FSMMixin):
-        fsm_url = url_for('oarepo_fsm.recid_fsm', pid_value=pid.pid_value)
+        fsm_url = url_for('oarepo_fsm.recid_fsm', pid_value=pid.pid_value, _external=True)
         links['fsm'] = fsm_url
 
     return links
