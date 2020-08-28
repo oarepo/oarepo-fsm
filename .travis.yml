@@ -54,7 +54,7 @@ before_install:
 install:
   - travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt
   - travis_retry pip install -e .[$EXTRAS]
-  - travis_retry pip uninstall oarepo-micro-api
+  - travis_retry pip uninstall -y oarepo-micro-api
 
 script:
   - "./run-tests.sh"
