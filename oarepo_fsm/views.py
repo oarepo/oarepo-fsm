@@ -69,25 +69,6 @@ class FSMRecordActions(ContentNegotiatedMethodView):
 
     @pass_record
     @validate_record_class
-    def get(self, pid, record, record_cls, **kwargs):
-        """Get Record FSM state response."""
-        actions = {}
-        for act in record_cls.user_actions().keys():
-            actions[act] = build_url_action_for_pid(pid, act)
-
-        result = dict(
-            metadata=dict(
-                state=record['state'],
-            ),
-            links=dict(
-                actions=actions
-            )
-        )
-
-        return jsonify(result)
-
-    @pass_record
-    @validate_record_class
     def post(self, pid, record, record_cls, action, **kwargs):
         """Change Record state using FSM action."""
         record = record_cls.get_record(record.id)

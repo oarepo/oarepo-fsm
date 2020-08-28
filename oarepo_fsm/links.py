@@ -6,7 +6,7 @@
 
 """OArepo FSM library for record state transitions."""
 
-from flask import jsonify, url_for
+from flask import url_for
 from invenio_records_rest.links import default_links_factory
 
 from oarepo_fsm.mixins import FSMMixin
@@ -32,6 +32,5 @@ def record_fsm_links_factory(pid, record=None, **kwargs):
             actions[act] = build_url_action_for_pid(pid, act)
 
         links.update(**actions)
-        print(links)
 
     return links

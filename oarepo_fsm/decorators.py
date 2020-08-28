@@ -27,8 +27,8 @@ def has_valid_state(f):
     """Decorator to check the record is in a valid state for transition execution."""
 
     def inner(self, record, **kwargs):
-        if record['state'] not in self.src:
-            raise InvalidSourceStateError(source=record['state'], target=self.dest)
+        if record[self.state] not in self.src:
+            raise InvalidSourceStateError(source=record[self.state], target=self.dest)
         return f(self, record, **kwargs)
 
     return inner
