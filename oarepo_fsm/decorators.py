@@ -54,11 +54,18 @@ class Transition(object):
     """A transition specification class."""
 
     def __init__(
-        self, src, dest, permissions=None, required=None, **kwargs
+        self,
+        src,
+        dest,
+        state='state',
+        permissions=None,
+        required=None,
+        **kwargs
     ):
         """Init transition object."""
         self.src = src
         self.dest = dest
+        self.state = state
         self.REQUIRED_PARAMS = required or []
         # default_perms = current_app.config[
         #     'OAREPO_FSM_DEFAULT_PERMISSION_FACTORY'
@@ -69,7 +76,7 @@ class Transition(object):
     @has_permission
     def execute(self, record, **kwargs):
         """Execute transition when conditions are met."""
-        record['state'] = self.dest
+        record[self.state] = self.dest
 
     @has_permission
     def check_permission(self, record):
