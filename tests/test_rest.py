@@ -8,10 +8,10 @@
 """Test StatefulRecord REST API."""
 import json
 
-from examples import ExampleRecord
 from flask import url_for
 from invenio_pidstore.fetchers import recid_fetcher_v2
 
+from examples import ExampleRecord
 from oarepo_fsm.views import build_url_action_for_pid
 
 
@@ -19,8 +19,8 @@ def test_record_rest_endpoints(app, json_headers):
     """Test REST API FSM endpoints."""
     url_rules = [r.rule for r in app.url_map.iter_rules()]
     url_endpoints = [r.endpoint for r in app.url_map.iter_rules()]
-    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/fsm' in url_rules
-    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/fsm/' \
+    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>' in url_rules
+    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/' \
            '<any(archive,close,open,publish):action>' in url_rules
     assert 'oarepo_fsm.recid_fsm' in url_endpoints
     assert 'oarepo_fsm.recid_actions' in url_endpoints
@@ -33,27 +33,28 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
     test_cases = [
         (users['user'],
          {
-             'actions': {
-                 'open': build_url_action_for_pid(recpid, 'open'),
-                 'close': build_url_action_for_pid(recpid, 'close')
-             }
+             'open': build_url_action_for_pid(recpid, 'open'),
+             'close': build_url_action_for_pid(recpid, 'close'),
+             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+                             pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['editor'],
          {
-             'actions': {
-                 'open': build_url_action_for_pid(recpid, 'open'),
-                 'close': build_url_action_for_pid(recpid, 'close'),
-                 'publish': build_url_action_for_pid(recpid, 'publish')
-             }
+             'open': build_url_action_for_pid(recpid, 'open'),
+             'close': build_url_action_for_pid(recpid, 'close'),
+             'publish': build_url_action_for_pid(recpid, 'publish'),
+             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+                             pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['admin'],
          {
-             'actions': {
-                 'open': build_url_action_for_pid(recpid, 'open'),
-                 'close': build_url_action_for_pid(recpid, 'close'),
-                 'publish': build_url_action_for_pid(recpid, 'publish'),
-                 'archive': build_url_action_for_pid(recpid, 'archive')
-             }
+
+             'open': build_url_action_for_pid(recpid, 'open'),
+             'close': build_url_action_for_pid(recpid, 'close'),
+             'publish': build_url_action_for_pid(recpid, 'publish'),
+             'archive': build_url_action_for_pid(recpid, 'archive'),
+             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+                             pid_value=recid_fetcher_v2(record.id, record).pid_value)
          })
     ]
 

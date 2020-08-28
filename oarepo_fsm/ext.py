@@ -40,6 +40,13 @@ class _OARepoFSMState(object):
             url_prefix=''
         )
 
+        if not enabled_endpoints:
+            # Auto-enable endpoints using FSM-enabled record_class
+            for end, conf in rest_config.items():
+                record_class = obj_or_import_string(conf['record_class'])
+                if issubclass(record_class, FSMMixin):
+                    enabled_endpoints.append(end)
+
         for e in enabled_endpoints:
             econf = rest_config.get(e)
             record_class = None
@@ -51,7 +58,7 @@ class _OARepoFSMState(object):
             if not issubclass(record_class, FSMMixin):
                 raise ValueError('{} must be a subclass of oarepo_fsm.mixins.FSMMixin'.format(record_class))
 
-            fsm_url = "{0}/fsm".format(econf["item_route"])
+            fsm_url = econf["item_route"]
             fsm_view_name = FSMRecordActions.view_name.format(e, 'fsm')
 
             distinct_actions = record_class.actions()

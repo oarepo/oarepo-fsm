@@ -22,5 +22,4 @@ def test_links_factory(app, record, json_headers):
         res = client.get(url, headers=json_headers)
         assert res.status_code == 200
         res_dict = json.loads(res.data.decode('utf-8'))
-        assert 'fsm' in res_dict['links']
-        assert res_dict['links']['fsm'] == 'http://localhost/records/{}/fsm'.format(pid)
+        assert {'close', 'open', 'self'} == set(res_dict['links'].keys())

@@ -9,5 +9,6 @@
 
 OAREPO_FSM_ENABLED_REST_ENDPOINTS = []
 """Record FSM endpoints configurations.
-    OAREPO_FSM_ENABLED_REST_ENDPOINTS = ['recid']
+   e.g.: OAREPO_FSM_ENABLED_REST_ENDPOINTS = ['recid']
+   Restricts FSM functionality only to specific endpoints.
 """

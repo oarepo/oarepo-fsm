@@ -39,12 +39,6 @@ Run the following commands to bootstrap your environment ::
 Configuration
 -------------
 
-To use this library, specify the FSM enabled Record enpoints in your config like this ::
-
-    OAREPO_FSM_ENABLED_REST_ENDPOINTS = ['recid']
-
-Where **recid** is the prefix key into your **RECORDS_REST_ENDPOINTS** configuration.
-
 Check that correct record_class is being used on the RECORDS_REST_ENDPOINT's item_route ::
 
     item_route='/records/<pid(recid,record_class="yourapp.models:RecordModelFSM"):pid_value>',
@@ -54,6 +48,12 @@ your **RECORDS_REST_ENDPOINTS** config ::
 
     links_factory_imp='oarepo_fsm.links:record_fsm_links_factory',
 
+If you wish to activate FSM on a certain Record enpoints only, put in your config ::
+
+    OAREPO_FSM_ENABLED_REST_ENDPOINTS = ['recid']
+
+Where **recid** is the prefix key into your **RECORDS_REST_ENDPOINTS** configuration.
+This library activates FSM on all endpoints using `record_class` inherited from `FSMMixin` otherwise.
 
 Usage
 -----
@@ -90,22 +90,24 @@ REST API Usage
 
 To get current record state and possible transitions (only actions that you have permission to invoke will be returned) ::
 
-    GET <record_rest_endpoint>/fsm
+    GET <record_rest_item_endpoint>
     >>>
     {
         metadata: {
             state: <current state of the record>
+            ... other record metadata
         }
         links: {
-            actions: {
-                <action_name>: <action_url>,
-                ...
+            self: ...
+            <fsm_action1_name>: <action_url>,
+            <fsm_action2_name>: <action_url>,
+            ...
         }
     }
 
 To invoke a specific transition action, do ::
 
-    POST <record_rest_endpoint>/fsm/<action_name>
+    POST <record_rest_endpoint>/<fsm_action_name>
 
 
 Further documentation is available on

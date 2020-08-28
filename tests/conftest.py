@@ -38,7 +38,7 @@ def app_config(app_config):
     app_config['JSONSCHEMAS_HOST'] = 'localhost:5000'
     app_config['PIDSTORE_RECID_FIELD'] = 'pid'
     app_config['RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY'] = allow_all
-    app_config['OAREPO_FSM_ENABLED_REST_ENDPOINTS'] = ['recid']
+    app_config['OAREPO_FSM_ENABLED_REST_ENDPOINTS'] = []
     app_config['RECORDS_REST_ENDPOINTS'] = dict(
         recid=dict(
             pid_type='recid',
@@ -105,31 +105,6 @@ def json_patch_headers(app):
         ('Content-Type', 'application/json-patch+json'),
         ('Accept', 'application/json'),
     ]
-
-
-# @pytest.fixture()
-# def test_records(db, test_data):
-#     """Load test records."""
-#     loans = []
-#     for data in test_data:
-#         loans.append(create_loan(data))
-#     db.session.commit()
-#     yield loans
-
-
-# @pytest.fixture()
-# def indexed_records(es, test_records):
-#     """Get a function to wait for records to be flushed to index."""
-#     indexer = RecordIndexer()
-#     for pid, record in test_records:
-#         indexer.index(record)
-#     current_search.flush_and_refresh(index="records")
-#
-#     yield test_records
-#
-#     for pid, record in test_records:
-#         indexer.delete_by_id(record.id)
-#     current_search.flush_and_refresh(index="records")
 
 
 @pytest.fixture()
