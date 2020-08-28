@@ -25,7 +25,7 @@ from .helpers import _test_login_factory, record_pid_minter, \
     test_views_permissions_factory
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def create_app():
     """Return API app."""
     return create_api
