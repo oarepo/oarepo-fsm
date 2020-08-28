@@ -64,7 +64,8 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
 
     for user, expected_links in test_cases:
         with app.test_client() as client:
-            client.get(url_for('_tests.test_login_{}'.format(user.id)))
+            client.get(url_for(
+                '_tests.test_login_{}'.format(user.id)).replace('/api', ''))
             res = client.get(url, headers=json_headers)
 
         assert res.status_code == 200
@@ -102,7 +103,8 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
 
     for user, actions, expected_results in test_cases:
         with app.test_client() as client:
-            client.get(url_for('_tests.test_login_{}'.format(user.id)))
+            client.get(
+                url_for('_tests.test_login_{}'.format(user.id)).replace('/api',''))
             for idx, action in enumerate(actions):
                 expected_status, expected_body = expected_results[idx]
                 actname, kwargs = action
