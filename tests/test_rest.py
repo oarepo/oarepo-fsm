@@ -59,8 +59,9 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
     ]
 
     url = url_for('oarepo_fsm.recid_fsm',
-                  pid_value=recid_fetcher_v2(record.id, record).pid_value)
-    print(url)
+                  pid_value=recid_fetcher_v2(record.id, record).pid_value) \
+        .replace('/api', '')
+
     for user, expected_links in test_cases:
         with app.test_client() as client:
             client.get(url_for('_tests.test_login_{}'.format(user.id)))
@@ -108,7 +109,8 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
 
                 url = url_for('oarepo_fsm.recid_actions',
                               action=actname,
-                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
+                              pid_value=recid_fetcher_v2(record.id, record).pid_value) \
+                    .replace('/api', '')
                 print(url)
                 res = client.post(url, json={**kwargs}, headers=json_headers)
                 res_dict = json.loads(res.data.decode('utf-8'))

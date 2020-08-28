@@ -16,10 +16,9 @@ from invenio_pidstore.fetchers import recid_fetcher_v2
 def test_links_factory(app, record, json_headers):
     pid = recid_fetcher_v2(record.id, record).pid_value
     url = url_for('invenio_records_rest.recid_item',
-                  pid_value=pid)
+                  pid_value=pid).replace('/api', '')
 
     with app.test_client() as client:
-        print(url)
         res = client.get(url, headers=json_headers)
         assert res.status_code == 200
         res_dict = json.loads(res.data.decode('utf-8'))
