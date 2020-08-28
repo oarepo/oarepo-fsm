@@ -19,8 +19,8 @@ def test_record_rest_endpoints(app, json_headers):
     """Test REST API FSM endpoints."""
     url_rules = [r.rule for r in app.url_map.iter_rules()]
     url_endpoints = [r.endpoint for r in app.url_map.iter_rules()]
-    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/fsm' in url_rules
-    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/fsm/' \
+    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>' in url_rules
+    assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/' \
            '<any(archive,close,open,publish):action>' in url_rules
     assert 'oarepo_fsm.recid_fsm' in url_endpoints
     assert 'oarepo_fsm.recid_actions' in url_endpoints
@@ -33,36 +33,39 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
     test_cases = [
         (users['user'],
          {
-             'actions': {
-                 'open': build_url_action_for_pid(recpid, 'open'),
-                 'close': build_url_action_for_pid(recpid, 'close')
-             }
+             'open': build_url_action_for_pid(recpid, 'open'),
+             'close': build_url_action_for_pid(recpid, 'close'),
+             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+                             pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['editor'],
          {
-             'actions': {
-                 'open': build_url_action_for_pid(recpid, 'open'),
-                 'close': build_url_action_for_pid(recpid, 'close'),
-                 'publish': build_url_action_for_pid(recpid, 'publish')
-             }
+             'open': build_url_action_for_pid(recpid, 'open'),
+             'close': build_url_action_for_pid(recpid, 'close'),
+             'publish': build_url_action_for_pid(recpid, 'publish'),
+             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+                             pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['admin'],
          {
-             'actions': {
-                 'open': build_url_action_for_pid(recpid, 'open'),
-                 'close': build_url_action_for_pid(recpid, 'close'),
-                 'publish': build_url_action_for_pid(recpid, 'publish'),
-                 'archive': build_url_action_for_pid(recpid, 'archive')
-             }
+
+             'open': build_url_action_for_pid(recpid, 'open'),
+             'close': build_url_action_for_pid(recpid, 'close'),
+             'publish': build_url_action_for_pid(recpid, 'publish'),
+             'archive': build_url_action_for_pid(recpid, 'archive'),
+             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+                             pid_value=recid_fetcher_v2(record.id, record).pid_value)
          })
     ]
 
     url = url_for('oarepo_fsm.recid_fsm',
-                  pid_value=recid_fetcher_v2(record.id, record).pid_value)
+                  pid_value=recid_fetcher_v2(record.id, record).pid_value) \
+        .replace('/api', '')
 
     for user, expected_links in test_cases:
         with app.test_client() as client:
-            client.get(url_for('_tests.test_login_{}'.format(user.id)))
+            client.get(url_for(
+                '_tests.test_login_{}'.format(user.id)).replace('/api', ''))
             res = client.get(url, headers=json_headers)
 
         assert res.status_code == 200
@@ -100,15 +103,17 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
 
     for user, actions, expected_results in test_cases:
         with app.test_client() as client:
-            client.get(url_for('_tests.test_login_{}'.format(user.id)))
+            client.get(
+                url_for('_tests.test_login_{}'.format(user.id)).replace('/api',''))
             for idx, action in enumerate(actions):
                 expected_status, expected_body = expected_results[idx]
                 actname, kwargs = action
 
                 url = url_for('oarepo_fsm.recid_actions',
                               action=actname,
-                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
-
+                              pid_value=recid_fetcher_v2(record.id, record).pid_value) \
+                    .replace('/api', '')
+                print(url)
                 res = client.post(url, json={**kwargs}, headers=json_headers)
                 res_dict = json.loads(res.data.decode('utf-8'))
                 assert res.status_code == expected_status
@@ -118,8 +123,9 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
 
 def test_rest_state_change_prevented(app, record, users, json_patch_headers, json_headers, test_blueprint):
     url = url_for('invenio_records_rest.recid_item',
-                  pid_value=recid_fetcher_v2(record.id, record).pid_value)
-
+                  pid_value=recid_fetcher_v2(record.id, record).pid_value).replace('/api', '')
+    print(url, app)
+    print(url, app)
     orig_state = record['state']
 
     with app.test_client() as client:
