@@ -6,10 +6,10 @@
 # the terms of the MIT License; see LICENSE file for more details.
 
 addons:
-  postgresql: 9.6
+  postgresql: "9.6"
 
 services:
-  - redis-server
+  - redis
   - elasticsearch
 
 notifications:
@@ -30,18 +30,13 @@ cache:
 env:
   global:
   - POSTGRESQL_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio"
-  - ES6_DOWNLOAD_URL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.0.tar.gz"
   - ES7_DOWNLOAD_URL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.5.1-linux-x86_64.tar.gz"
   - ES_HOST=127.0.0.1
   matrix:
-  - REQUIREMENTS=release EXTRAS=all,postgresql,tests ES=$ES6_DOWNLOAD_URL SQLALCHEMY_DATABASE_URI=$POSTGRESQL_SQLALCHEMY_DATABASE_URI
-  - REQUIREMENTS=release EXTRAS=all,sqlite,tests ES=$ES6_DOWNLOAD_URL
-  - REQUIREMENTS=release EXTRAS=all,postgresql,tests ES=$ES6_DOWNLOAD_URL  OAREPO_VERSION=3.2.0 SQLALCHEMY_DATABASE_URI=$POSTGRESQL_SQLALCHEMY_DATABASE_URI
-  - REQUIREMENTS=release EXTRAS=all,sqlite,tests ES=$ES6_DOWNLOAD_URL  OAREPO_VERSION=3.2.0
+  - REQUIREMENTS=release EXTRAS=all,sqlite,tests-es7 ES=$ES7_DOWNLOAD_URL  OAREPO_VERSION=3.2.0
   - REQUIREMENTS=release EXTRAS=all,postgresql,tests-es7 ES=$ES7_DOWNLOAD_URL  OAREPO_VERSION=3.2.0 SQLALCHEMY_DATABASE_URI=$POSTGRESQL_SQLALCHEMY_DATABASE_URI
 
 python:
-- '3.7'
 - '3.8'
 
 
@@ -65,7 +60,7 @@ script:
 
 after_success:
   - coveralls
-  -
+
 # check if release tag is the same as version.py tag
 before_deploy:
 - |-
@@ -76,7 +71,7 @@ deploy:
   provider: pypi
   user: "__token__"
   password:
-    secure: "TODO: secure token"
+    secure: "X5go/4ZIGl04vXWPF9YGflJHvM6f1ZGfyU0rS1DsmG+SbEtoEeFwD/gRsXz8IJY1vLO2EeVIE5SprTJ10jzsS2+Py9Tv2wYos28qxnNhqTHDXeK4HgZ5ta6bfbkOrUyFMCd4b5d8fQ1Z79r+CbdnJr/0FYr0hjCmWOYCbPWEykSbO7VOajVxPLsqeNbTqjjwJA8dMPVFhN9LTjtlsVuKpdwJ5XOMnV8hcrfL9iPIs09BuGMhqhRw9N9HCfkkMGS0IrKmN3FcmpHRLnEParjwil96XaWR54zQQ9cADy9OwUBTOpLqZfYfNyaHja6JyL6pqCGp02YINM3UtMNZfa0UWWmwJri8pnXrM0Fn9XR8mKsw28qUxpTb6t8G1DgOgOWekYTpIwQuLUlX8vDQGbsfuFBlhjW60M3AncC8xLnWBUu7WNLkUKPbkDdTq8/sRMKH9iAkBqKNVmf6tNSEfnVUPopgtLPZeXTnquMwYRQ6NmNOPsYXVU12ZyMtuNSkqi6Zx19hJfk5YLsw/qSZokawM2VEnMlVJEd3hA/aV0qQLhQCBqSeqLftGM/4vUbF25H4KWYmLHrJjeOo8pzailm/S4juUB1ujzzzG0pVwpV2MKB+KaQTGDEIDGARBkLACZbIOUdes3LfV5jZJrR1zdzUM9UZrUYbjx8H1WjlFNJwO40="
   on:
     tags: true
     branch: master
