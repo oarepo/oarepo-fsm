@@ -19,6 +19,7 @@ def test_links_factory(app, record, json_headers):
                   pid_value=pid)
 
     with app.test_client() as client:
+        print(url)
         res = client.get(url, headers=json_headers)
         assert res.status_code == 200
         res_dict = json.loads(res.data.decode('utf-8'))
