@@ -65,3 +65,5 @@ target/
 requirements.txt
 
 .direnv
+
+.venv
