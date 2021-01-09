@@ -11,7 +11,6 @@ from __future__ import absolute_import, print_function
 import uuid
 
 import pytest
-from examples.models import ExampleRecord
 from flask import Blueprint
 from invenio_access import ActionRoles, authenticated_user, superuser_access
 from invenio_accounts.models import Role
@@ -20,6 +19,8 @@ from invenio_db import db
 from invenio_indexer.api import RecordIndexer
 from invenio_records_rest.utils import allow_all
 from invenio_search import RecordsSearch
+
+from examples.models import ExampleRecord
 
 from .helpers import _test_login_factory, record_pid_minter, \
     test_views_permissions_factory

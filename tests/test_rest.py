@@ -8,10 +8,10 @@
 """Test StatefulRecord REST API."""
 import json
 
-from examples import ExampleRecord
 from flask import url_for
 from invenio_pidstore.fetchers import recid_fetcher_v2
 
+from examples import ExampleRecord
 from oarepo_fsm.views import build_url_action_for_pid
 
 
