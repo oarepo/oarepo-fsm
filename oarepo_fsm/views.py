@@ -11,6 +11,7 @@ from __future__ import absolute_import, print_function
 from functools import wraps
 
 from flask import current_app, jsonify, request, url_for
+from invenio_base.utils import obj_or_import_string
 from invenio_db import db
 from invenio_records_rest import current_records_rest
 from invenio_records_rest.views import pass_record
@@ -51,7 +52,9 @@ def record_class_from_pid_type(pid_type):
     """Returns a Record class from a given pid_type."""
     try:
         prefix = current_records_rest.default_endpoint_prefixes[pid_type]
-        return current_app.config.get('RECORDS_REST_ENDPOINTS', {})[prefix]['record_class']
+        return obj_or_import_string(
+            current_app.config.get('RECORDS_REST_ENDPOINTS', {})[prefix]['record_class']
+        )
     except KeyError:
         return None
 

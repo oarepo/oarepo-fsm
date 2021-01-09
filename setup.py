@@ -13,7 +13,7 @@ from setuptools import find_packages, setup
 
 readme = open('README.rst').read()
 history = open('CHANGES.rst').read()
-OAREPO_VERSION = os.environ.get('OAREPO_VERSION', '3.2.0')
+OAREPO_VERSION = os.environ.get('OAREPO_VERSION', '3.3.0')
 
 install_requires = [
     'wrapt>=1.11.2'
