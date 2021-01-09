@@ -22,20 +22,19 @@ def test_record_rest_endpoints(app, json_headers):
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>' in url_rules
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/' \
            '<any(archive,close,open,publish):action>' in url_rules
-    assert 'oarepo_fsm.recid_fsm' in url_endpoints
     assert 'oarepo_fsm.recid_actions' in url_endpoints
 
 
 def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
     """TEST FSM REST API logged in as certain users."""
     recpid = recid_fetcher_v2(record.id, record)
-
+    print(app.url_map)
     test_cases = [
         (users['user'],
          {
              'open': build_url_action_for_pid(recpid, 'open'),
              'close': build_url_action_for_pid(recpid, 'close'),
-             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+             'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['editor'],
@@ -43,7 +42,7 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
              'open': build_url_action_for_pid(recpid, 'open'),
              'close': build_url_action_for_pid(recpid, 'close'),
              'publish': build_url_action_for_pid(recpid, 'publish'),
-             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+             'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['admin'],
@@ -53,12 +52,12 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
              'close': build_url_action_for_pid(recpid, 'close'),
              'publish': build_url_action_for_pid(recpid, 'publish'),
              'archive': build_url_action_for_pid(recpid, 'archive'),
-             'self': url_for('oarepo_fsm.recid_fsm', _external=True,
+             'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          })
     ]
 
-    url = url_for('oarepo_fsm.recid_fsm',
+    url = url_for('invenio_records_rest.recid_item',
                   pid_value=recid_fetcher_v2(record.id, record).pid_value) \
         .replace('/api', '')
 
