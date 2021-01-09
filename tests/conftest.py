@@ -32,6 +32,15 @@ def create_app():
     return create_api
 
 
+@pytest.fixture(scope='session')
+def celery_config():
+    """Celery app test configuration."""
+    return {
+        'broker_url': 'memory://localhost/',
+        'result_backend': 'rpc'
+    }
+
+
 @pytest.fixture(scope='module')
 def app_config(app_config):
     """Flask application fixture."""
