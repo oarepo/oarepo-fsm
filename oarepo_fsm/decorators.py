@@ -51,11 +51,11 @@ class Transition(object):
         self.original_function = None
 
     def enabled_for_record(self, record):
-        return record[self.state] in self.src
+        return record.get(self.state, None) in self.src
 
     def check_valid_state(self, record):
         if not self.enabled_for_record(record):
-            raise InvalidSourceStateError(source=record[self.state], target=self.dest)
+            raise InvalidSourceStateError(source=record.get(self.state, None), target=self.dest)
 
     def check_permissions(self, record):
         if not self.has_permissions(record):
