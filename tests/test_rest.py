@@ -32,21 +32,27 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
     test_cases = [
         (users['user'],
          {
-             'open': build_url_transition_for_pid(recpid, 'open'),
+             'transitions': {
+                 'open': build_url_transition_for_pid(recpid, 'open'),
+             },
              'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['editor'],
          {
-             'open': build_url_transition_for_pid(recpid, 'open'),
+             'transitions': {
+                 'open': build_url_transition_for_pid(recpid, 'open'),
+             },
              'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['admin'],
          {
 
-             'open': build_url_transition_for_pid(recpid, 'open'),
-             'archive': build_url_transition_for_pid(recpid, 'archive'),
+             'transitions': {
+                 'open': build_url_transition_for_pid(recpid, 'open'),
+                 'archive': build_url_transition_for_pid(recpid, 'archive'),
+             },
              'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          })
@@ -98,7 +104,7 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
     for user, transitions, expected_results in test_cases:
         with app.test_client() as client:
             client.get(
-                url_for('_tests.test_login_{}'.format(user.id)).replace('/api',''))
+                url_for('_tests.test_login_{}'.format(user.id)).replace('/api', ''))
             for idx, transition in enumerate(transitions):
                 expected_status, expected_body = expected_results[idx]
                 actname, kwargs = transition

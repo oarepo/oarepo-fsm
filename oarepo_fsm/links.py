@@ -22,7 +22,6 @@ def record_fsm_links_factory(pid, record=None, **kwargs):
     :returns: Dictionary containing a list of useful links + FSM link for the record.
     """
     links = default_links_factory(pid, record, **kwargs)
-    rec_cls = record_class_from_pid_type(pid.pid_type)
 
     if record and isinstance(record, FSMMixin):
         transitions = {}
@@ -30,6 +29,6 @@ def record_fsm_links_factory(pid, record=None, **kwargs):
         for act in record.available_user_transitions().keys():
             transitions[act] = build_url_transition_for_pid(pid, act)
 
-        links.update(**transitions)
+        links['transitions'] = transitions
 
     return links
