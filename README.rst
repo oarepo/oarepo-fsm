@@ -88,7 +88,7 @@ Where **Transition** is defined as:
 REST API Usage
 --------------
 
-To get current record state and possible transitions (only actions that you have permission to invoke will be returned) ::
+To get current record state and possible transitions (only transitions that you have permission to invoke will be returned) ::
 
     GET <record_rest_item_endpoint>
     >>>
@@ -99,15 +99,15 @@ To get current record state and possible transitions (only actions that you have
         }
         links: {
             self: ...
-            <fsm_action1_name>: <action_url>,
-            <fsm_action2_name>: <action_url>,
+            <fsm_transition1_name>: <transition_url>,
+            <fsm_transition2_name>: <transition_url>,
             ...
         }
     }
 
-To invoke a specific transition action, do ::
+To invoke a specific transition transition, do ::
 
-    POST <record_rest_endpoint>/<fsm_action_name>
+    POST <record_rest_endpoint>/<fsm_transition_name>
 
 
 Further documentation is available on
