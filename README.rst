@@ -98,9 +98,11 @@ To get current record state and possible transitions (only transitions that you 
             ... other record metadata
         }
         links: {
-            self: ...
-            <fsm_transition1_name>: <transition_url>,
-            <fsm_transition2_name>: <transition_url>,
+            self: ...,
+            "transitions": {
+                <fsm_transition1_name>: <transition_url>,
+                <fsm_transition2_name>: <transition_url>,
+            },
             ...
         }
     }
