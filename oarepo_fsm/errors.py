@@ -57,15 +57,15 @@ class DirectStateModificationError(FSMException):
         super().__init__(**kwargs)
 
 
-class ActionNotAvailableError(FSMException):
-    """Raised when the requested action is not available to current user."""
+class TransitionNotAvailableError(FSMException):
+    """Raised when the requested transition is not available to current user."""
 
     code = 404
 
-    def __init__(self, action=None, **kwargs):
+    def __init__(self, transition=None, **kwargs):
         """Initialize exception."""
         self.description = (
-            "Action {} is not available on this record".format(action)
+            "Transition {} is not available on this record".format(transition)
         )
         super().__init__(**kwargs)
 
@@ -100,7 +100,7 @@ class InvalidPermissionError(FSMException):
     def __init__(self, permissions=None, **kwargs):
         """Initialize exception."""
         self.description = (
-            "This action is not permitted "
+            "This transition is not permitted "
             "for your user {}. Required: '{}'".format(current_user, permissions)
         )
         super().__init__(**kwargs)

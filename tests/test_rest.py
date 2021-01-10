@@ -12,7 +12,7 @@ from flask import url_for
 from invenio_pidstore.fetchers import recid_fetcher_v2
 
 from examples import ExampleRecord
-from oarepo_fsm.views import build_url_action_for_pid
+from oarepo_fsm.views import build_url_transition_for_pid
 
 
 def test_record_rest_endpoints(app, json_headers):
@@ -21,8 +21,8 @@ def test_record_rest_endpoints(app, json_headers):
     url_endpoints = [r.endpoint for r in app.url_map.iter_rules()]
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>' in url_rules
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/' \
-           '<any(archive,close,open,publish):action>' in url_rules
-    assert 'oarepo_fsm.recid_actions' in url_endpoints
+           '<any(archive,close,open,publish):transition>' in url_rules
+    assert 'oarepo_fsm.recid_transitions' in url_endpoints
 
 
 def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
@@ -32,26 +32,21 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
     test_cases = [
         (users['user'],
          {
-             'open': build_url_action_for_pid(recpid, 'open'),
-             'close': build_url_action_for_pid(recpid, 'close'),
+             'open': build_url_transition_for_pid(recpid, 'open'),
              'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['editor'],
          {
-             'open': build_url_action_for_pid(recpid, 'open'),
-             'close': build_url_action_for_pid(recpid, 'close'),
-             'publish': build_url_action_for_pid(recpid, 'publish'),
+             'open': build_url_transition_for_pid(recpid, 'open'),
              'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          }),
         (users['admin'],
          {
 
-             'open': build_url_action_for_pid(recpid, 'open'),
-             'close': build_url_action_for_pid(recpid, 'close'),
-             'publish': build_url_action_for_pid(recpid, 'publish'),
-             'archive': build_url_action_for_pid(recpid, 'archive'),
+             'open': build_url_transition_for_pid(recpid, 'open'),
+             'archive': build_url_transition_for_pid(recpid, 'archive'),
              'self': url_for('invenio_records_rest.recid_item', _external=True,
                              pid_value=recid_fetcher_v2(record.id, record).pid_value)
          })
@@ -79,41 +74,42 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
         (users['user'],
          [('open', {'id': 1}), ('close', {'id': 1}), ('publish', {})],
          [
-             (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
-             (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
-             (404, {'message': 'Action publish is not available on this record'})
+             (202, {'metadata': {'pid': record['pid'], 'state': 'open', 'title': 'example'}}),
+             (202, {'metadata': {'pid': record['pid'], 'state': 'closed', 'title': 'example'}}),
+             (400, {'message': 'Transition from closed to published is not allowed'})
          ]),
         (users['editor'],
          [('open', {'id': 2}), ('close', {'id': 2}), ('publish', {})],
          [
-             (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
-             (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
+             (202, {'metadata': {'pid': record['pid'], 'state': 'open', 'title': 'example'}}),
+             (202, {'metadata': {'pid': record['pid'], 'state': 'closed', 'title': 'example'}}),
              (400, {'message': 'Transition from closed to published is not allowed'})
          ]),
         (users['admin'],
          [('open', {'id': 3}), ('close', {'id': 3}), ('archive', {}), ('publish', {})],
          [
-             (202, {'metadata': {'pid': '2', 'state': 'open', 'title': 'example'}}),
-             (202, {'metadata': {'pid': '2', 'state': 'closed', 'title': 'example'}}),
-             (202, {'metadata': {'pid': '2', 'state': 'archived', 'title': 'example'}}),
-             (202, {'metadata': {'pid': '2', 'state': 'published', 'title': 'example'}})
+             (202, {'metadata': {'pid': record['pid'], 'state': 'open', 'title': 'example'}}),
+             (202, {'metadata': {'pid': record['pid'], 'state': 'closed', 'title': 'example'}}),
+             (202, {'metadata': {'pid': record['pid'], 'state': 'archived', 'title': 'example'}}),
+             (202, {'metadata': {'pid': record['pid'], 'state': 'published', 'title': 'example'}})
          ])
     ]
 
-    for user, actions, expected_results in test_cases:
+    for user, transitions, expected_results in test_cases:
         with app.test_client() as client:
             client.get(
                 url_for('_tests.test_login_{}'.format(user.id)).replace('/api',''))
-            for idx, action in enumerate(actions):
+            for idx, transition in enumerate(transitions):
                 expected_status, expected_body = expected_results[idx]
-                actname, kwargs = action
+                actname, kwargs = transition
 
-                url = url_for('oarepo_fsm.recid_actions',
-                              action=actname,
+                url = url_for('oarepo_fsm.recid_transitions',
+                              transition=actname,
                               pid_value=recid_fetcher_v2(record.id, record).pid_value) \
                     .replace('/api', '')
-                print(url)
+                print(user, url, transition)
                 res = client.post(url, json={**kwargs}, headers=json_headers)
+                print(res.status_code, res.data)
                 res_dict = json.loads(res.data.decode('utf-8'))
                 assert res.status_code == expected_status
                 for k, v in expected_body.items():

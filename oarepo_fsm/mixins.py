@@ -50,45 +50,44 @@ class FSMMixin(object):
         return super().update(e, **f)
 
     @classmethod
-    def actions(cls):
-        """All transition actions defined on a record model.
+    def all_transitions(cls):
+        """All transition transitions defined on a record model.
 
         :params cls:
-        :returns: A dict of all actions defined on a record model.
+        :returns: A dict of all transitions defined on a record model.
         """
-        if not getattr(cls, '_actions', False):
-            cls._actions = {}
+        if not getattr(cls, '_transitions', False):
+            cls._transitions = {}
             funcs = inspect.getmembers(cls, predicate=inspect.isfunction)
 
             for act, fn in funcs:
                 if getattr(fn, '_fsm', False):
-                    cls._actions[act] = fn
+                    cls._transitions[act] = fn._fsm
 
-        return cls._actions
+        return cls._transitions
 
-    @classmethod
-    def transitions(cls):
-        """All transitions defined on a record model.
-
-        :params cls:
-        :returns: A dict of all transition specs defined on a record model.
-        """
-        return {act: getattr(fn, '_fsm') for act, fn in cls.actions().items()}
+    def available_transitions(self):
+        return {k: v for k, v in self.all_transitions().items() if v.enabled_for_record(self)}
 
     @classmethod
-    def user_actions(cls):
-        """Actions that can be triggered by a current_user.
-
-        :params cls:
-        :returns: A dict of all actions that can be triggered by a current user.
-        """
+    def all_user_transitions(cls):
         ut = {}
-        all_actions = cls.actions()
 
-        for act, trans in cls.transitions().items():
+        for k, trans in cls.all_transitions().items():
             try:
-                if trans.check_permission(None):
-                    ut[act] = all_actions[act]
+                if trans.has_permissions(None):
+                    ut[k] = trans
+            except (InvalidPermissionError, KeyError):
+                continue
+        return ut
+
+    def available_user_transitions(self):
+        ut = {}
+
+        for k, trans in self.available_transitions().items():
+            try:
+                if trans.has_permissions(self):
+                    ut[k] = trans
             except (InvalidPermissionError, KeyError):
                 continue
         return ut
