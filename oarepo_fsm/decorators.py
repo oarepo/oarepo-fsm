@@ -10,30 +10,6 @@ from oarepo_fsm.errors import InvalidPermissionError, \
     InvalidSourceStateError, MissingRequiredParameterError
 
 
-def has_permission(f):
-    """Decorator to check the transition permission requirements are fulfilled."""
-
-    def inner(self, record, **kwargs):
-        if self.permissions and not any([p(record).can() for p in self.permissions]):
-            raise InvalidPermissionError(
-                permissions=self.permissions
-            )
-        return f(self, record, **kwargs)
-
-    return inner
-
-
-def has_valid_state(f):
-    """Decorator to check the record is in a valid state for transition execution."""
-
-    def inner(self, record, **kwargs):
-        if record[self.state] not in self.src:
-            raise InvalidSourceStateError(source=record[self.state], target=self.dest)
-        return f(self, record, **kwargs)
-
-    return inner
-
-
 def has_required_params(trans):
     """Decorator to ensure that all required parameters has been passed to wrapped function."""
     def wrapper(f):
@@ -71,17 +47,37 @@ class Transition(object):
         #     'OAREPO_FSM_DEFAULT_PERMISSION_FACTORY'
         # ]
         self.permissions = permissions or []  # or default_perms
+        self.function = None
+        self.original_function = None
 
-    @has_valid_state
-    @has_permission
+    def enabled_for_record(self, record):
+        """Return if this transition can be applied to the record."""
+        return record.get(self.state, None) in self.src
+
+    def check_valid_state(self, record):
+        """Check if transition can be applied to the record; if not, raise exception."""
+        if not self.enabled_for_record(record):
+            raise InvalidSourceStateError(source=record.get(self.state, None), target=self.dest)
+
+    def check_permissions(self, record):
+        """Check if user has permission to this transition and record; if not, raise exception."""
+        if not self.has_permissions(record):
+            raise InvalidPermissionError(
+                permissions=self.permissions
+            )
+
+    def has_permissions(self, record):
+        """Return true if user has permission to this transition and record."""
+        if not self.permissions:
+            return True
+        for p in self.permissions:
+            if p(record).can():
+                return True
+        return False
+
     def execute(self, record, **kwargs):
         """Execute transition when conditions are met."""
         record[self.state] = self.dest
-
-    @has_permission
-    def check_permission(self, record):
-        """Check transition permission requirements."""
-        return True
 
 
 def transition(t: Transition):
@@ -93,10 +89,15 @@ def transition(t: Transition):
     def inner(f):
         @has_required_params(t)
         def wrapper(self, *args, **kwargs):
-            t.execute(record=self, **kwargs)
+            record = self
+            t.check_valid_state(record)
+            t.check_permissions(record)
+            t.execute(record=record, **kwargs)
             f(self, *args, **kwargs)
 
         wrapper._fsm = t
+        t.function = wrapper
+        t.original_function = f
         return wrapper
 
     return inner

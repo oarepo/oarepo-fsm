@@ -10,7 +10,7 @@ from flask import url_for
 from invenio_records_rest.links import default_links_factory
 
 from oarepo_fsm.mixins import FSMMixin
-from oarepo_fsm.views import build_url_action_for_pid, \
+from oarepo_fsm.views import build_url_transition_for_pid, \
     record_class_from_pid_type
 
 
@@ -22,15 +22,13 @@ def record_fsm_links_factory(pid, record=None, **kwargs):
     :returns: Dictionary containing a list of useful links + FSM link for the record.
     """
     links = default_links_factory(pid, record, **kwargs)
-    rec_cls = record_class_from_pid_type(pid.pid_type)
 
-    if issubclass(rec_cls, FSMMixin):
-        actions = {}
+    if record and isinstance(record, FSMMixin):
+        transitions = {}
 
-        fsm_url = url_for('oarepo_fsm.recid_fsm', pid_value=pid.pid_value, _external=True)
-        for act in rec_cls.user_actions().keys():
-            actions[act] = build_url_action_for_pid(pid, act)
+        for act in record.available_user_transitions().keys():
+            transitions[act] = build_url_transition_for_pid(pid, act)
 
-        links.update(**actions)
+        links['transitions'] = transitions
 
     return links

@@ -17,7 +17,7 @@ from invenio_records_rest import current_records_rest
 from invenio_records_rest.views import pass_record
 from invenio_rest import ContentNegotiatedMethodView
 
-from oarepo_fsm.errors import ActionNotAvailableError, RecordNotStatefulError
+from oarepo_fsm.errors import TransitionNotAvailableError, RecordNotStatefulError
 from oarepo_fsm.mixins import FSMMixin
 
 
@@ -38,12 +38,12 @@ def validate_record_class(f):
     return inner
 
 
-def build_url_action_for_pid(pid, action):
-    """Build urls for Loan actions."""
+def build_url_transition_for_pid(pid, transition):
+    """Build urls for Loan transitions."""
     return url_for(
-        "oarepo_fsm.{0}_actions".format(pid.pid_type),
+        "oarepo_fsm.{0}_transitions".format(pid.pid_type),
         pid_value=pid.pid_value,
-        action=action,
+        transition=transition,
         _external=True,
     )
 
@@ -59,8 +59,8 @@ def record_class_from_pid_type(pid_type):
         return None
 
 
-class FSMRecordActions(ContentNegotiatedMethodView):
-    """StatefulRecord actions view."""
+class FSMRecordTransitions(ContentNegotiatedMethodView):
+    """StatefulRecord transitions view."""
 
     view_name = '{0}_{1}'
 
@@ -72,15 +72,15 @@ class FSMRecordActions(ContentNegotiatedMethodView):
 
     @pass_record
     @validate_record_class
-    def post(self, pid, record, record_cls, action, **kwargs):
-        """Change Record state using FSM action."""
+    def post(self, pid, record, record_cls, transition, **kwargs):
+        """Change Record state using FSM transition."""
         record = record_cls.get_record(record.id)
-        ua = record.user_actions().get(action, None)
+        ua = record.all_transitions().get(transition, None)
         if not ua:
-            raise ActionNotAvailableError(action)
+            raise TransitionNotAvailableError(transition)
 
-        # Invoke requested action for the current record
-        ua(record, **request.json)
+        # Invoke requested transition for the current record
+        ua.function(record, **request.json)
         record.commit()
         db.session.commit()
         return self.make_response(

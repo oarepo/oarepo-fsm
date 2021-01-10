@@ -22,4 +22,5 @@ def test_links_factory(app, record, json_headers):
         res = client.get(url, headers=json_headers)
         assert res.status_code == 200
         res_dict = json.loads(res.data.decode('utf-8'))
-        assert {'close', 'open', 'self'} == set(res_dict['links'].keys())
+        assert set(res_dict['links'].keys()) == {'self', 'transitions'}
+        assert set(res_dict['links']['transitions'].keys()) == {'open'}

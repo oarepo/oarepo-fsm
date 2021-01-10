@@ -15,7 +15,7 @@ from invenio_records_rest.utils import obj_or_import_string
 
 from . import config
 from .mixins import FSMMixin
-from .views import FSMRecordActions
+from .views import FSMRecordTransitions
 
 
 class _OARepoFSMState(object):
@@ -59,12 +59,12 @@ class _OARepoFSMState(object):
                 raise ValueError('{} must be a subclass of oarepo_fsm.mixins.FSMMixin'.format(record_class))
 
             fsm_url = econf["item_route"]
-            fsm_view_name = FSMRecordActions.view_name.format(e, 'fsm')
+            fsm_view_name = FSMRecordTransitions.view_name.format(econf['pid_type'], 'fsm')
 
-            distinct_actions = record_class.actions()
-            actions_view_name = FSMRecordActions.view_name.format(e, 'actions')
-            actions_url = "{0}/<any({1}):action>".format(
-                fsm_url, ",".join([name for name, fn in distinct_actions.items()])
+            distinct_transitions = record_class.all_transitions()
+            transitions_view_name = FSMRecordTransitions.view_name.format(econf['pid_type'], 'transitions')
+            transitions_url = "{0}/<any({1}):transition>".format(
+                fsm_url, ",".join([name for name, fn in distinct_transitions.items()])
             )
 
             serializers = {}
@@ -77,18 +77,12 @@ class _OARepoFSMState(object):
                 ctx={}
             )
 
-            record_fsm = FSMRecordActions.as_view(
-                fsm_view_name,
+            record_transitions = FSMRecordTransitions.as_view(
+                transitions_view_name,
                 **view_options
             )
 
-            record_actions = FSMRecordActions.as_view(
-                actions_view_name,
-                **view_options
-            )
-
-            fsm_blueprint.add_url_rule(fsm_url, view_func=record_fsm, methods=["GET"])
-            fsm_blueprint.add_url_rule(actions_url, view_func=record_actions, methods=["POST"])
+            fsm_blueprint.add_url_rule(transitions_url, view_func=record_transitions, methods=["POST"])
 
         app.register_blueprint(fsm_blueprint)
 

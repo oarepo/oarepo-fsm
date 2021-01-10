@@ -38,7 +38,7 @@ def create_record(data):
         return pid, record
 
 
-def test_views_permissions_factory(action):
+def test_views_permissions_factory(transition):
     """Test permissions factory."""
     return allow_all()
 
