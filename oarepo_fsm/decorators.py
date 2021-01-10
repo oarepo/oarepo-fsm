@@ -51,19 +51,23 @@ class Transition(object):
         self.original_function = None
 
     def enabled_for_record(self, record):
+        """Return if this transition can be applied to the record."""
         return record.get(self.state, None) in self.src
 
     def check_valid_state(self, record):
+        """Check if transition can be applied to the record; if not, raise exception."""
         if not self.enabled_for_record(record):
             raise InvalidSourceStateError(source=record.get(self.state, None), target=self.dest)
 
     def check_permissions(self, record):
+        """Check if user has permission to this transition and record; if not, raise exception."""
         if not self.has_permissions(record):
             raise InvalidPermissionError(
                 permissions=self.permissions
             )
 
     def has_permissions(self, record):
+        """Return true if user has permission to this transition and record."""
         if not self.permissions:
             return True
         for p in self.permissions:

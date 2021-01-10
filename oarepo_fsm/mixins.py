@@ -67,10 +67,12 @@ class FSMMixin(object):
         return cls._transitions
 
     def available_transitions(self):
+        """Return all transitions that are allowed by record state."""
         return {k: v for k, v in self.all_transitions().items() if v.enabled_for_record(self)}
 
     @classmethod
     def all_user_transitions(cls):
+        """Return all transitions allowed to be performed by current user."""
         ut = {}
 
         for k, trans in cls.all_transitions().items():
@@ -82,6 +84,7 @@ class FSMMixin(object):
         return ut
 
     def available_user_transitions(self):
+        """Return all transitions user can perform on this record at this time."""
         ut = {}
 
         for k, trans in self.available_transitions().items():
