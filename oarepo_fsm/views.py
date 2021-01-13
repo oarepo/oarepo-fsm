@@ -80,7 +80,7 @@ class FSMRecordTransitions(ContentNegotiatedMethodView):
             raise TransitionNotAvailableError(transition)
 
         # Invoke requested transition for the current record
-        ua.function(record, **request.json)
+        ua.function(record, **(request.json or {}))
         record.commit()
         db.session.commit()
         return self.make_response(
