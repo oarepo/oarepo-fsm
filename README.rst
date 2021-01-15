@@ -114,3 +114,54 @@ To invoke a specific transition transition, do ::
 
 Further documentation is available on
 https://oarepo-fsm.readthedocs.io/
+
+
+Permission factories
+--------------------
+
+Sometimes access to records should be governed by the state of the record. For example,
+if the record is in ``state=editing``, any editor can make changes. If it is ``state=approving``,
+only the curator can modify the record.
+
+On REST level, modification permissions are governed by permission factories ::
+
+    from invenio_records_rest.utils import allow_all, deny_all
+    RECORDS_REST_ENDPOINTS = dict(
+        recid=dict(
+           create_permission_factory_imp=deny_all,
+           delete_permission_factory_imp=deny_all,
+           update_permission_factory_imp=deny_all,
+           read_permission_factory_imp=allow_all,
+       )
+    )
+
+This library provides the following factories and helpers:
+
+   * ``transition_required(*transitions)`` allows user if
+     he is entitled to perform any of the transitions (
+     method names) on the current record
+   * ``states_required(*states, state_field="state"`` allows
+     anyone if the record is in any of the states mentioned
+   * ``require_all(*perms_or_factories)`` allows user only if all
+     permissions allow. Use it with states_required as follows ::
+
+        require_all(
+            states_required('editing'),
+            editing_user_permission_factory
+        )
+
+     where editing_user_permission_factory is a permission factory allowing only
+     editing users.
+   * ``require_any(*perms_or_factories)`` allows user if any of
+     the permissions allow. Example ::
+
+        require_any(
+            require_all(
+                states_required('editing'),
+                editing_user_permission_factory
+            ),
+            require_all(
+                states_required('editing', 'approving),
+                curator_user_permission_factory
+            ),
+        )
