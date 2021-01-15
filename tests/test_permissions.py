@@ -11,7 +11,8 @@ from flask_security import login_user
 
 from examples.models import ExampleRecord
 from oarepo_fsm.errors import InvalidPermissionError
-from oarepo_fsm.permissions import state_required, require_all, require_any, transition_required
+from oarepo_fsm.permissions import require_all, require_any, state_required, \
+    transition_required
 
 
 def test_transition_permissions(record: ExampleRecord, users):

@@ -3,8 +3,7 @@
 
 def transition_required(*transitions):
     """
-    Permission factory that requires that current user has access to at least
-    one of the transitions and at the same time has ``required`` permission (or factory).
+    Permission factory that requires that current user has access to at least one of the transitions and at the same time has ``required`` permission (or factory).
 
     If the required permission is not set, it is considered as true. If it is callable,
     it is called at first to get the Permission (object with .can() method).
@@ -25,8 +24,9 @@ def transition_required(*transitions):
 
 def state_required(*states, state_field='state'):
     """
-    Permission factory that requires that record is in one of the states.
-    The created permission does not depend on user. You can use
+    Permission factory that requires that record is in one of the states. The created permission does not depend on user.
+
+    You can use
     ```
         require_all(state_required('editing'), Permission(RoleNeed('editor')))
     ```
@@ -51,8 +51,7 @@ def perm_or_factory(perm, *args, **kwargs):
 
 def require_all(*permissions):
     """
-    Permission factory that requires that all the permissions are fulfilled - that is,
-    their can() method returns True.
+    Permission factory that requires that all the permissions are fulfilled - that is, their can() method returns True.
 
     The permissions might be factories (callable returning the permission). In that case,
     they are called with the arguments and their result is used as a Permission.
@@ -77,8 +76,7 @@ def require_all(*permissions):
 
 def require_any(*permissions):
     """
-    Permission factory that requires that any the permissions are fulfilled - that is,
-    their can() method returns True.
+    Permission factory that requires that any the permissions are fulfilled - that is, their can() method returns True.
 
     The permissions might be factories (callable returning the permission). In that case,
     they are called with the arguments and their result is used as a Permission.
