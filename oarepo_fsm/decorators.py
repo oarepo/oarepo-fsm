@@ -43,9 +43,6 @@ class Transition(object):
         self.dest = dest
         self.state = state
         self.REQUIRED_PARAMS = required or []
-        # default_perms = current_app.config[
-        #     'OAREPO_FSM_DEFAULT_PERMISSION_FACTORY'
-        # ]
         self.permissions = permissions or []  # or default_perms
         self.function = None
         self.original_function = None
@@ -71,7 +68,9 @@ class Transition(object):
         if not self.permissions:
             return True
         for p in self.permissions:
-            if p(record).can():
+            if callable(p):
+                p = p(record)
+            if p.can():
                 return True
         return False
 
@@ -86,6 +85,13 @@ def transition(src, dest, state='state', permissions=None, required=None, **kwar
     :params parameters for transition object, see documentation for details.
     :returns: A wrapper around a wrapped function, with added `_fsm` field containing the `Transition` spec.
     """
+    if permissions is not None and not isinstance(permissions, (list, tuple)):
+        permissions = [permissions]
+    if required is not None and not isinstance(required, (list, tuple)):
+        required = [required]
+    if not isinstance(src, (list, tuple)):
+        src = [src]
+
     t = Transition(
         src=src,
         dest=dest,
@@ -94,6 +100,7 @@ def transition(src, dest, state='state', permissions=None, required=None, **kwar
         required=required,
         **kwargs
     )
+
     def inner(f):
         @has_required_params(t)
         def wrapper(self, *args, **kwargs):
