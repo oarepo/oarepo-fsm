@@ -58,9 +58,13 @@ class FSMMixin(object):
         """
         if not getattr(cls, '_transitions', False):
             cls._transitions = {}
-            funcs = inspect.getmembers(cls, predicate=inspect.isfunction)
 
-            for act, fn in funcs:
+            # use dict directly and not inspect.getmembers as __dict__ seems to be sorted
+            # by definition order and getmembers alphabetically. Definition order is better
+            # because it enables to return the transitions in "logical" order.
+            for act, fn in cls.__dict__.items():
+                if not inspect.isfunction(fn):
+                    continue
                 if getattr(fn, '_fsm', False):
                     cls._transitions[act] = fn._fsm
 
