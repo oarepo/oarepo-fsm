@@ -16,18 +16,18 @@ def admin_permission(record):
 
 class ExampleRecord(FSMMixin, Record):
 
-    @transition(Transition(src=['closed'], dest='open', required=['id']))
+    @transition(src=['closed'], dest='open', required=['id'])
     def open(self, **kwargs):
         print('record {} opened'.format(kwargs.get('id')))
 
-    @transition(Transition(src=['open'], dest='closed', required=['id']))
+    @transition(src=['open'], dest='closed', required=['id'])
     def close(self, **kwargs):
         print('record {} closed'.format(kwargs.get('id')))
 
-    @transition(Transition(src=['open', 'archived'], dest='published', permissions=[editor_permission]))
+    @transition(src=['open', 'archived'], dest='published', permissions=[editor_permission])
     def publish(self, **kwargs):
         print('record published')
 
-    @transition(Transition(src=['closed', 'published'], dest='archived', permissions=[admin_permission]))
+    @transition(src=['closed', 'published'], dest='archived', permissions=[admin_permission])
     def archive(self, **kwargs):
         print('record archived')

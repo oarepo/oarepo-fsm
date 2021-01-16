@@ -80,12 +80,20 @@ class Transition(object):
         record[self.state] = self.dest
 
 
-def transition(t: Transition):
+def transition(src, dest, state='state', permissions=None, required=None, **kwargs):
     """Decorator that marks the wrapped function as a state transition.
 
-    :params obj: :class:`~oarepo_fsm.mixins.Transition` a transition specification instance.
+    :params parameters for transition object, see documentation for details.
     :returns: A wrapper around a wrapped function, with added `_fsm` field containing the `Transition` spec.
     """
+    t = Transition(
+        src=src,
+        dest=dest,
+        state=state,
+        permissions=permissions,
+        required=required,
+        **kwargs
+    )
     def inner(f):
         @has_required_params(t)
         def wrapper(self, *args, **kwargs):
