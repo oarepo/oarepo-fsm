@@ -58,18 +58,18 @@ class Transition(object):
 
     def check_permissions(self, record):
         """Check if user has permission to this transition and record; if not, raise exception."""
-        if not self.has_permissions(record):
+        if not self.has_permissions(record=record):
             raise InvalidPermissionError(
                 permissions=self.permissions
             )
 
-    def has_permissions(self, record):
+    def has_permissions(self, record=None):
         """Return true if user has permission to this transition and record."""
         if not self.permissions:
             return True
         for p in self.permissions:
             if callable(p):
-                p = p(record)
+                p = p(record=record)
             if p.can():
                 return True
         return False
