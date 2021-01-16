@@ -19,9 +19,10 @@ def test_record_rest_endpoints(app, json_headers):
     """Test REST API FSM endpoints."""
     url_rules = [r.rule for r in app.url_map.iter_rules()]
     url_endpoints = [r.endpoint for r in app.url_map.iter_rules()]
+    print(url_rules)
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>' in url_rules
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/' \
-           '<any(archive,close,open,publish):transition>' in url_rules
+           '<any(open,close,publish,archive):transition>' in url_rules
     assert 'oarepo_fsm.recid_transitions' in url_endpoints
 
 
