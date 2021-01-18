@@ -73,7 +73,8 @@ To define FSM transitions on this class, create methods decorated with **@transi
         src=['open', 'archived'],
         dest='published',
         required=['id'],
-        permissions=[editor_permission])
+        permissions=[editor_permission],
+        commit_record=True)
     def publish(self, **kwargs):
         print('record published')
 
@@ -83,7 +84,10 @@ Where decorator parameters mean:
   - **dest**: target state of the transition
   - **required**: a list of required ``**kwargs`` that must be passed to the ``@transition`` decorated function
   - **permissions**: currently logged user must have at least one of the permissions to execute the transition
+  - **commit_record**: should the changes made in a record be commited after the function returns?
 
+A transition-decorated function can optionally return a custom flask Response or a JSON-serializable
+dict to be provided to user in a JSON response.
 
 REST API Usage
 --------------

@@ -1,3 +1,4 @@
+from flask import make_response
 from flask_principal import RoleNeed
 from invenio_access import Permission
 from invenio_records import Record
@@ -31,3 +32,11 @@ class ExampleRecord(FSMMixin, Record):
     @transition(src=['closed', 'published'], dest='archived', permissions=[admin_permission])
     def archive(self, **kwargs):
         print('record archived')
+
+    @transition(src=['published', 'closed'], dest='deleted', commit_record=False)
+    def delete(self, **kwargs):
+        print('deleting record')
+        return make_response(
+            {'status': 'deleted'},
+            202
+        )

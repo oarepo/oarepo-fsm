@@ -36,6 +36,7 @@ class Transition(object):
         state='state',
         permissions=None,
         required=None,
+        commit_record=True,
         **kwargs
     ):
         """Init transition object."""
@@ -46,6 +47,7 @@ class Transition(object):
         self.permissions = permissions or []  # or default_perms
         self.function = None
         self.original_function = None
+        self.commit_record = commit_record
 
     def enabled_for_record(self, record):
         """Return if this transition can be applied to the record."""
@@ -79,7 +81,13 @@ class Transition(object):
         record[self.state] = self.dest
 
 
-def transition(src, dest, state='state', permissions=None, required=None, **kwargs):
+def transition(src,
+               dest,
+               state='state',
+               permissions=None,
+               required=None,
+               commit_record=True,
+               **kwargs):
     """Decorator that marks the wrapped function as a state transition.
 
     :params parameters for transition object, see documentation for details.
@@ -98,6 +106,7 @@ def transition(src, dest, state='state', permissions=None, required=None, **kwar
         state=state,
         permissions=permissions,
         required=required,
+        commit_record=commit_record,
         **kwargs
     )
 
@@ -108,7 +117,7 @@ def transition(src, dest, state='state', permissions=None, required=None, **kwar
             t.check_valid_state(record)
             t.check_permissions(record)
             t.execute(record=record, **kwargs)
-            f(self, *args, **kwargs)
+            return f(self, *args, **kwargs)
 
         wrapper._fsm = t
         t.function = wrapper
