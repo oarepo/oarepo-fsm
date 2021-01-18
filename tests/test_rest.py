@@ -22,7 +22,7 @@ def test_record_rest_endpoints(app, json_headers):
     print(url_rules)
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>' in url_rules
     assert '/records/<pid(recid,record_class="examples.models:ExampleRecord"):pid_value>/' \
-           '<any(open,close,publish,archive):transition>' in url_rules
+           '<any(open,close,publish,archive,delete):transition>' in url_rules
     assert 'oarepo_fsm.recid_transitions' in url_endpoints
 
 
@@ -34,6 +34,7 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
         (users['user'],
          {
              'transitions': {
+                 'delete': build_url_transition_for_pid(recpid, 'delete'),
                  'open': build_url_transition_for_pid(recpid, 'open'),
              },
              'self': url_for('invenio_records_rest.recid_item', _external=True,
@@ -42,6 +43,7 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
         (users['editor'],
          {
              'transitions': {
+                 'delete': build_url_transition_for_pid(recpid, 'delete'),
                  'open': build_url_transition_for_pid(recpid, 'open'),
              },
              'self': url_for('invenio_records_rest.recid_item', _external=True,
@@ -51,6 +53,7 @@ def test_fsm_rest_get(app, json_headers, record, users, test_blueprint):
          {
 
              'transitions': {
+                 'delete': build_url_transition_for_pid(recpid, 'delete'),
                  'open': build_url_transition_for_pid(recpid, 'open'),
                  'archive': build_url_transition_for_pid(recpid, 'archive'),
              },
@@ -93,12 +96,13 @@ def test_fsm_rest_post(app, json_headers, record, users, test_blueprint):
              (400, {'message': 'Transition from closed to published is not allowed'})
          ]),
         (users['admin'],
-         [('open', {'id': 3}), ('close', {'id': 3}), ('archive', {}), ('publish', {})],
+         [('open', {'id': 3}), ('close', {'id': 3}), ('archive', {}), ('publish', {}), ('delete', {})],
          [
              (202, {'metadata': {'pid': record['pid'], 'state': 'open', 'title': 'example'}}),
              (202, {'metadata': {'pid': record['pid'], 'state': 'closed', 'title': 'example'}}),
              (202, {'metadata': {'pid': record['pid'], 'state': 'archived', 'title': 'example'}}),
-             (202, {'metadata': {'pid': record['pid'], 'state': 'published', 'title': 'example'}})
+             (202, {'metadata': {'pid': record['pid'], 'state': 'published', 'title': 'example'}}),
+             (202, {'status': 'deleted'})
          ])
     ]
 
