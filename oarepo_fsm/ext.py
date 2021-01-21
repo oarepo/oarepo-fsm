@@ -16,6 +16,7 @@ from invenio_records_rest.utils import obj_or_import_string
 from . import config
 from .mixins import FSMMixin
 from .views import FSMRecordTransitions
+from invenio_indexer.api import RecordIndexer
 
 
 class _OARepoFSMState(object):
@@ -58,6 +59,8 @@ class _OARepoFSMState(object):
             if not issubclass(record_class, FSMMixin):
                 raise ValueError('{} must be a subclass of oarepo_fsm.mixins.FSMMixin'.format(record_class))
 
+            indexer_class = obj_or_import_string(econf.get('indexer_class', RecordIndexer))
+
             fsm_url = econf["item_route"]
             fsm_view_name = FSMRecordTransitions.view_name.format(econf['pid_type'], 'fsm')
 
@@ -73,6 +76,7 @@ class _OARepoFSMState(object):
 
             view_options = dict(
                 serializers=serializers,
+                indexer_class=indexer_class,
                 default_media_type=econf['default_media_type'],
                 ctx={}
             )

@@ -64,9 +64,10 @@ class FSMRecordTransitions(ContentNegotiatedMethodView):
 
     view_name = '{0}_{1}'
 
-    def __init__(self, serializers, ctx, *args, **kwargs):
+    def __init__(self, serializers, ctx, indexer_class, *args, **kwargs):
         """Constructor."""
         super().__init__(serializers, *args, **kwargs)
+        self.indexer_class = indexer_class
         for key, value in ctx.items():
             setattr(self, key, value)
 
@@ -85,6 +86,9 @@ class FSMRecordTransitions(ContentNegotiatedMethodView):
         if ua.commit_record:
             record.commit()
             db.session.commit()
+
+            if self.indexer_class().record_to_index(record)[0]:
+                self.indexer_class().index(record)
 
         if res:
             if isinstance(res, Response):
