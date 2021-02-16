@@ -63,9 +63,6 @@ setup(
     include_package_data=True,
     platforms='any',
     entry_points={
-        'invenio_db.models': [
-            'oarepo_fsm = examples.models',
-        ],
         'invenio_base.apps': [
             'oarepo_fsm = oarepo_fsm.ext:OARepoFSM',
         ],
