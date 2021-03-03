@@ -44,8 +44,8 @@ class _OARepoFSMState(object):
         if not enabled_endpoints:
             # Auto-enable endpoints using FSM-enabled record_class
             for end, conf in rest_config.items():
-                record_class = obj_or_import_string(conf['record_class'])
-                if issubclass(record_class, FSMMixin):
+                record_class = obj_or_import_string(conf.get('record_class', None))
+                if record_class and issubclass(record_class, FSMMixin):
                     enabled_endpoints.append(end)
 
         for e in enabled_endpoints:
