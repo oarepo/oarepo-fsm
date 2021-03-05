@@ -46,7 +46,6 @@ class FSMMixin(object):
 
     def update(self, e=None, **f):
         """Dictionary update."""
-        self._check_schema(e or f)
         return super().update(e, **f)
 
     @classmethod
