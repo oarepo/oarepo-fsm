@@ -42,3 +42,4 @@ recursive-exclude tests *
 exclude .coveragerc
 exclude .envrc
 exclude requirements-doc.txt
+recursive-include oarepo_fsm *.json

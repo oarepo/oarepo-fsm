@@ -1,0 +1,9 @@
+{
+  "FSMRecord": {
+    "properties": {
+      "state": {
+        "type": "keyword"
+      }
+    }
+  }
+}
