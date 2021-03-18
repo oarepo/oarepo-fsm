@@ -68,7 +68,10 @@ setup(
         ],
         'invenio_base.api_apps': [
             'oarepo_fsm = oarepo_fsm.ext:OARepoFSM',
-        ]
+        ],
+        'oarepo_mapping_includes': [
+            'oarepo_fsm = oarepo_fsm.included_mappings'
+        ],
     },
     extras_require=extras_require,
     install_requires=install_requires,

@@ -1,0 +1,13 @@
+{
+  "definitions": {
+    "FSMRecord": {
+      "$id": "#fsmrecord",
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
