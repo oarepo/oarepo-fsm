@@ -61,11 +61,12 @@ class FSMMixin(object):
             # use dict directly and not inspect.getmembers as __dict__ seems to be sorted
             # by definition order and getmembers alphabetically. Definition order is better
             # because it enables to return the transitions in "logical" order.
-            for act, fn in cls.__dict__.items():
-                if not inspect.isfunction(fn):
-                    continue
-                if getattr(fn, '_fsm', False):
-                    cls._transitions[act] = fn._fsm
+            for pc in cls.mro():
+                for act, fn in pc.__dict__.items():
+                    if not inspect.isfunction(fn):
+                        continue
+                    if getattr(fn, '_fsm', False) and act not in cls._transitions.keys():
+                        cls._transitions[act] = fn._fsm
 
         return cls._transitions
 
