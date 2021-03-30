@@ -72,6 +72,9 @@ setup(
         'oarepo_mapping_includes': [
             'oarepo_fsm = oarepo_fsm.included_mappings'
         ],
+        'invenio_jsonschemas.schemas': [
+            "oarepo_fsm = oarepo_fsm.jsonschemas"
+        ]
     },
     extras_require=extras_require,
     install_requires=install_requires,
