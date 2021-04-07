@@ -8,6 +8,7 @@
 
 from oarepo_fsm.errors import InvalidPermissionError, \
     InvalidSourceStateError, MissingRequiredParameterError
+from oarepo_fsm.mixins import FSMMixin
 
 
 def has_required_params(trans):
@@ -33,7 +34,7 @@ class Transition(object):
         self,
         src,
         dest,
-        state='state',
+        state=None,
         permissions=None,
         required=None,
         commit_record=True,
@@ -49,14 +50,24 @@ class Transition(object):
         self.original_function = None
         self.commit_record = commit_record
 
+    def _get_state(self, record):
+        if self.state is None:
+            return record._deep_get_state(record)
+        return FSMMixin._deep_get_state(record, self.state.split('.'))
+
+    def _set_state(self, record, state):
+        if self.state is None:
+            return record._deep_set_state(record, state)
+        return FSMMixin._deep_set_state(record, state, self.state.split('.'))
+
     def enabled_for_record(self, record):
         """Return if this transition can be applied to the record."""
-        return record.get(self.state, None) in self.src
+        return self._get_state(record) in self.src
 
     def check_valid_state(self, record):
         """Check if transition can be applied to the record; if not, raise exception."""
         if not self.enabled_for_record(record):
-            raise InvalidSourceStateError(source=record.get(self.state, None), target=self.dest)
+            raise InvalidSourceStateError(source=self._get_state(record), target=self.dest)
 
     def check_permissions(self, record):
         """Check if user has permission to this transition and record; if not, raise exception."""
@@ -78,12 +89,12 @@ class Transition(object):
 
     def execute(self, record, **kwargs):
         """Execute transition when conditions are met."""
-        record[self.state] = self.dest
+        self._set_state(record, self.dest)
 
 
 def transition(src,
                dest,
-               state='state',
+               state=None,
                permissions=None,
                required=None,
                commit_record=True,

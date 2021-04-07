@@ -7,6 +7,6 @@
 # the terms of the MIT License; see LICENSE file for more details.
 
 pydocstyle oarepo_fsm tests docs && \
-isort -c tests oarepo-fsm && \
+isort -c tests oarepo_fsm && \
 check-manifest --ignore ".travis-*" && \
 python setup.py test

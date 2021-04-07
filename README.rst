@@ -89,6 +89,18 @@ Where decorator parameters mean:
 A transition-decorated function can optionally return a custom flask Response or a JSON-serializable
 dict to be provided to user in a JSON response.
 
+"state" field name
+------------------
+
+To change state field name, set ::
+
+    class MyRecord(FSMMixin, ...):
+        STATE_FIELD = 'administrative_props.state'
+
+
+Note that the field name might be nested. If the container element does not exist,
+it will be created on the first transition.
+
 REST API Usage
 --------------
 
