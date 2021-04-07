@@ -22,11 +22,16 @@ class FSMMixin(object):
     as well. The reason is that Invenio does not inject custom Record implementation for PUT, PATCH and DELETE
     operations.
     """
+
     STATE_FIELD = 'state'
+    "State field name."
+
     _STATE_FIELD_PARSED = None
+    "Parsed state field name"
 
     @classmethod
     def _deep_get_state(cls, data, state_field=None):
+        """Internal method for getting state from nested field."""
         if not state_field:
             if not cls._STATE_FIELD_PARSED:
                 cls._STATE_FIELD_PARSED = cls.STATE_FIELD.split('.')
@@ -39,6 +44,7 @@ class FSMMixin(object):
 
     @classmethod
     def _deep_set_state(cls, data, state, state_field=None):
+        """Internal method for getting state to nested field."""
         if not state_field:
             if not cls._STATE_FIELD_PARSED:
                 cls._STATE_FIELD_PARSED = cls.STATE_FIELD.split('.')

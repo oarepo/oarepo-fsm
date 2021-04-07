@@ -11,12 +11,12 @@ from __future__ import absolute_import, print_function
 
 from flask import Blueprint
 from invenio_base.signals import app_loaded
+from invenio_indexer.api import RecordIndexer
 from invenio_records_rest.utils import obj_or_import_string
 
 from . import config
 from .mixins import FSMMixin
 from .views import FSMRecordTransitions
-from invenio_indexer.api import RecordIndexer
 
 
 class _OARepoFSMState(object):
