@@ -55,4 +55,9 @@ def test_record_user_transitions(record: ExampleRecord, users):
     assert set(ut.keys()) == {'delete', 'archive', 'open'}
 
 
+def test_clear(record: ExampleRecord):
+    state = record['state']
+    record.clear()
+    assert record['state'] == state
+
 

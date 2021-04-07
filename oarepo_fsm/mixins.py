@@ -59,7 +59,7 @@ class FSMMixin(object):
 
     def clear(self):
         """Preserves the state even if the record is cleared and all metadata wiped out."""
-        state = self._deep_set_state(self)
+        state = self._deep_get_state(self)
         super().clear()
         if state:
             self._deep_set_state(self, state)
