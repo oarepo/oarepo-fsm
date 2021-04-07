@@ -101,6 +101,9 @@ To change state field name, set ::
 Note that the field name might be nested. If the container element does not exist,
 it will be created on the first transition.
 
+Note: if you use your own state field, do not use marshamllow mixin, json schema
+or included mappings. Write/use your own.
+
 REST API Usage
 --------------
 

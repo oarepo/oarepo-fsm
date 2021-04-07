@@ -11,6 +11,10 @@ from marshmallow import Schema
 
 
 class FSMRecordSchemaMixin(Schema):
-    """FSMRecord schema mixin."""
+    """FSMRecord schema mixin.
+
+    Note: if you use your own state field, do not inherit from this mixin,
+    write your own !
+    """
 
     state = SanitizedUnicode(required=False)
