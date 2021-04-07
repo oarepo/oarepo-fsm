@@ -39,7 +39,7 @@ class FSMMixin(object):
 
         for s in state_field:
             if data:
-                data = data[s]
+                data = data.get(s)
         return data
 
     @classmethod
