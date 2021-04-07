@@ -1,4 +1,5 @@
 """Permissions and helpers."""
+from oarepo_fsm.mixins import FSMMixin
 
 
 def transition_required(*transitions):
@@ -22,7 +23,7 @@ def transition_required(*transitions):
     return factory
 
 
-def state_required(*states, state_field='state'):
+def state_required(*states, state_field=None):
     """
     Permission factory that requires that record is in one of the states. The created permission does not depend on user.
 
@@ -35,7 +36,13 @@ def state_required(*states, state_field='state'):
 
     def factory(record, *_args, **_kwargs):
         def can():
-            return record.get(state_field, None) in states
+
+            if state_field is None:
+                current_state = record._deep_get_state(record)
+            else:
+                current_state = FSMMixin._deep_get_state(record, state_field.split('.'))
+
+            return current_state in states
 
         return type('StateRequiredPermission', (), {'can': can})
 

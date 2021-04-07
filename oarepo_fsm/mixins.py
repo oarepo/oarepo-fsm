@@ -22,13 +22,41 @@ class FSMMixin(object):
     as well. The reason is that Invenio does not inject custom Record implementation for PUT, PATCH and DELETE
     operations.
     """
+    STATE_FIELD = 'state'
+    _STATE_FIELD_PARSED = None
+
+    @classmethod
+    def _deep_get_state(cls, data, state_field=None):
+        if not state_field:
+            if not cls._STATE_FIELD_PARSED:
+                cls._STATE_FIELD_PARSED = cls.STATE_FIELD.split('.')
+            state_field = cls._STATE_FIELD_PARSED
+
+        for s in state_field:
+            if data:
+                data = data[s]
+        return data
+
+    @classmethod
+    def _deep_set_state(cls, data, state, state_field=None):
+        if not state_field:
+            if not cls._STATE_FIELD_PARSED:
+                cls._STATE_FIELD_PARSED = cls.STATE_FIELD.split('.')
+            state_field = cls._STATE_FIELD_PARSED
+
+        for s in state_field[:-1]:
+            if s not in data:
+                data[s] = {}
+            data = data[s]
+        data[state_field[-1]] = state
+        return data
 
     def clear(self):
         """Preserves the state even if the record is cleared and all metadata wiped out."""
-        state = self.get('state')
+        state = self._deep_set_state(self)
         super().clear()
         if state:
-            self['state'] = state
+            self._deep_set_state(self, state)
 
     def patch(self, patch):
         """Patch record metadata.
@@ -39,7 +67,7 @@ class FSMMixin(object):
         self_data = dict(self)
         patched_data = apply_patch(dict(self), patch)
 
-        if patched_data['state'] != self_data['state']:
+        if self._deep_get_state(patched_data) != self._deep_get_state(self_data):
             raise DirectStateModificationError()
 
         return self.__class__(patched_data, model=self.model)
