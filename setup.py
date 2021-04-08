@@ -40,7 +40,7 @@ setup_requires = [
     'pytest-runner>=2.7',
 ]
 
-packages = find_packages()
+packages = find_packages(exclude=['examples', 'tests'])
 
 # Get the version string. Cannot be done with import!
 g = {}

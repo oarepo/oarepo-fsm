@@ -43,3 +43,5 @@ exclude .coveragerc
 exclude .envrc
 exclude requirements-doc.txt
 recursive-include oarepo_fsm *.json
+recursive-exclude examples *
+recursive-exclude tests *
