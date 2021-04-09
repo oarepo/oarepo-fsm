@@ -14,14 +14,16 @@ from oarepo_fsm.views import build_url_transition_for_pid, \
     record_class_from_pid_type
 
 
-def record_fsm_links_factory(pid, record=None, **kwargs):
+def record_fsm_links_factory(pid, record=None, original_links_factory=None, **kwargs):
     """Factory for record FSM links generation.
 
     :param pid: A Persistent Identifier instance.
     :param record: An instance of a Record.
+    :param original_links_factory: a link factory to be used to generate default links
     :returns: Dictionary containing a list of useful links + FSM link for the record.
     """
-    links = default_links_factory(pid, record, **kwargs)
+    links_factory = original_links_factory or default_links_factory
+    links = links_factory(pid, record, **kwargs)
 
     if record and isinstance(record, FSMMixin):
         transitions = {}
