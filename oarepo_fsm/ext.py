@@ -48,6 +48,7 @@ class _OARepoFSMState(object):
                 if record_class and issubclass(record_class, FSMMixin):
                     enabled_endpoints.append(end)
 
+        processed_classes = set()
         for e in enabled_endpoints:
             econf = rest_config.get(e)
             record_class = None
@@ -58,6 +59,10 @@ class _OARepoFSMState(object):
 
             if not issubclass(record_class, FSMMixin):
                 raise ValueError('{} must be a subclass of oarepo_fsm.mixins.FSMMixin'.format(record_class))
+
+            if record_class in processed_classes:
+                continue
+            processed_classes.add(record_class)
 
             indexer_class = obj_or_import_string(econf.get('indexer_class', RecordIndexer))
 
