@@ -7,8 +7,6 @@
 """OArepo FSM library for record state transitions."""
 import inspect
 
-from jsonpatch import apply_patch
-
 from oarepo_fsm.errors import DirectStateModificationError, \
     InvalidPermissionError
 
@@ -71,12 +69,13 @@ class FSMMixin(object):
         :returns: A new :class:`Record` instance.
         """
         self_data = dict(self)
-        patched_data = apply_patch(dict(self), patch)
+        record = super().patch(patch)
+        patched_data = dict(record)
 
         if self._deep_get_state(patched_data) != self._deep_get_state(self_data):
             raise DirectStateModificationError()
 
-        return self.__class__(patched_data, model=self.model)
+        return record
 
     def update(self, e=None, **f):
         """Dictionary update."""
