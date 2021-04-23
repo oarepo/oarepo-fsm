@@ -1,11 +1,12 @@
 {
   "definitions": {
     "FSMRecord": {
-      "$id": "#fsmrecord",
+      "title": "OARepoFSM fields v1.0.0",
       "type": "object",
       "properties": {
         "state": {
-          "type": "string"
+          "type": "string",
+          "description": "Field representing the current state of the record"
         }
       }
     }
